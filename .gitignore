@@ -15,3 +15,8 @@
 # Folders
 FallDetector/Debug/
 FallDetector/FallDetector/Debug/
+
+# Project
+*.suo
+*.sdf
+*.opensdf
