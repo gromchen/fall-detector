@@ -1,15 +1,23 @@
 #include <ctime>
 #include <iostream>
 
+#include "Fruit.h"
+
 using namespace std;
  
 int main()
 {
-    srand((unsigned int) time(NULL));
+    Fruit orange(2);
 
-    int num = (rand() % 10) + 1;
-    
-    cout << num << endl;
+    cout << orange.GetQuantity() << endl;
+
+    orange.Buy(4);
+
+    cout << orange.GetQuantity() << endl;
+
+    orange.Sell(5);
+
+    cout << orange.GetQuantity() << endl;
 
     return 0;
 }
