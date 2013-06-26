@@ -1,23 +1,13 @@
-#include <ctime>
-#include <iostream>
+#include <vld.h> // TODO: use environment variable
+#include <opencv2\core\core.hpp>
+#include <opencv2\highgui\highgui.hpp>
 
-#include "Fruit.h"
-
-using namespace std;
- 
 int main()
 {
-    Fruit orange(2);
-
-    cout << orange.GetQuantity() << endl;
-
-    orange.Buy(4);
-
-    cout << orange.GetQuantity() << endl;
-
-    orange.Sell(5);
-
-    cout << orange.GetQuantity() << endl;
+    cv::Mat image = cv::imread("img.jpg"); // TODO: cannot find file
+    cv::namedWindow("My Image");
+    cv::imshow("My Image", image);
+    cv::waitKey(5000);
 
     return 0;
 }
