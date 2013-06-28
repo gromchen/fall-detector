@@ -7,7 +7,7 @@
 
 int main()
 {
-    cv::Mat image = cv::imread("img.jpg"); // TODO: cannot find file
+    cv::Mat image = cv::imread("img.jpg");
     cv::namedWindow("My Image");
     cv::imshow("My Image", image);
     cv::waitKey(5000);
