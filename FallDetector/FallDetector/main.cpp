@@ -1,4 +1,7 @@
-#include <vld.h> // TODO: use environment variable
+// Visual Leak Detector
+#include <vld.h>
+
+// OpenCV
 #include <opencv2\core\core.hpp>
 #include <opencv2\highgui\highgui.hpp>
 
