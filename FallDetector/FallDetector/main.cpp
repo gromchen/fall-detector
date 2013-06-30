@@ -1,9 +1,10 @@
-// Visual Leak Detector
-#include <vld.h>
+#ifdef _WIN32
+#include <vld.h> // Visual Leak Detector
+#endif
 
 // OpenCV
-#include <opencv2\core\core.hpp>
-#include <opencv2\highgui\highgui.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 int main()
 {
