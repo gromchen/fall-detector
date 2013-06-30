@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 2.8)
+project(FallDetector)
+find_package(OpenCV REQUIRED)
+add_executable(FallDetector main.cpp)
+target_link_libraries(FallDetector ${OpenCV_LIBS})
