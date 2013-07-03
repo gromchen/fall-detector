@@ -20,7 +20,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="img.jpg">
+    <Image Include="lena.png">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>
