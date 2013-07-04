@@ -56,17 +56,19 @@ void thresholding(cv::Mat &image, uchar threshValue)
     }
 }
 
-int main()
+int main(int argc, char** argv)
 {
-    cv::Mat image;
-
-    image = cv::imread("lena.png");
+    cv::Mat image = cv::imread("lena.png");
+    
     cv::namedWindow("Original Image", cv::WINDOW_AUTOSIZE);
     cv::imshow("Original Image", image);
 
-    thresholding(image, 150);
-    cv::namedWindow("Threshold Image", cv::WINDOW_AUTOSIZE);
-    cv::imshow("Threshold Image", image);
+    cv::Mat grayImage;
+
+    grayImage.create(image.rows, image.cols, CV_8UC1);
+    cv::cvtColor(image, grayImage, cv::COLOR_BGR2GRAY);
+    cv::namedWindow("Gray Scale Image", cv::WINDOW_AUTOSIZE);
+    cv::imshow("Gray Scale Image", grayImage);
 
     cv::waitKey(0);
 
