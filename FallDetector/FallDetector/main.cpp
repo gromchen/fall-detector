@@ -2,75 +2,40 @@
 #include <vld.h> // Visual Leak Detector
 #endif
 
-#include <opencv2/core/core.hpp> // Basic OpenCV data structures
+#include "utilities.h"
+
 #include <opencv2/highgui/highgui.hpp> // OpenCV interface
 #include <opencv2/imgproc/imgproc.hpp> // Image processing module
 
-/// <summary>
-/// Thresholds image
-/// </summary>
-/// <param name="image">Image</param>
-/// <param name="threshValue">Thresh value</param>
-/// <returns>Nothing</returns>
-void thresholding(cv::Mat &image, uchar threshValue)
-{
-    if (image.rows == -1 && image.cols == -1)
-    {
-        return;
-    }
-
-    for (size_t j = 0; j < (size_t) image.rows; j++)
-    {
-        for (size_t i = 0; i < (size_t) image.cols; i++)
-        {
-            if (image.channels() == 1)
-            {
-                // Grayscale image
-                uchar value = image.at<uchar>(j, i);
-
-                if (value > threshValue)
-                {
-                    image.at<uchar>(j, i) = 255;
-                }
-            }
-            else
-            {
-                if (image.channels() == 3)
-                {
-                    // Color image
-                    uchar averageValue = static_cast<uchar>((
-                        image.at<cv::Vec3b>(j, i)[0] +
-                        image.at<cv::Vec3b>(j, i)[1] +
-                        image.at<cv::Vec3b>(j, i)[2]
-                        ) / 3);
-
-                    if (averageValue > threshValue)
-                    {
-                        image.at<cv::Vec3b>(j, i)[0] = 255;
-                        image.at<cv::Vec3b>(j, i)[1] = 255;
-                        image.at<cv::Vec3b>(j, i)[2] = 255;
-                    }
-                }
-            }
-        }
-    }
-}
+using namespace cv;
+using namespace fd;
 
 int main(int argc, char** argv)
 {
-    cv::Mat image = cv::imread("lena.png");
-    
-    cv::namedWindow("Original Image", cv::WINDOW_AUTOSIZE);
-    cv::imshow("Original Image", image);
+    Mat original_image = imread("lena.png");
+    namedWindow("Original Image", WINDOW_AUTOSIZE);
+    imshow("Original Image", original_image);
 
-    cv::Mat grayImage;
+    Mat hidden_image = imread("girlface.png");
+    namedWindow("Hidden Image", WINDOW_AUTOSIZE);
+    imshow("Hidden Image", hidden_image);
 
-    grayImage.create(image.rows, image.cols, CV_8UC1);
-    cv::cvtColor(image, grayImage, cv::COLOR_BGR2GRAY);
-    cv::namedWindow("Gray Scale Image", cv::WINDOW_AUTOSIZE);
-    cv::imshow("Gray Scale Image", grayImage);
+    Mat steged_image;
+    steganograph(original_image, hidden_image, steged_image);
+    namedWindow("Steganagraphed Image", WINDOW_AUTOSIZE);
+    imshow("Steganagraphed Image", steged_image);
 
-    cv::waitKey(0);
+    Mat front_image;
+    Mat unsteged_image;
+    get_original_images(steged_image, front_image, unsteged_image);
+
+    namedWindow("Front Image", WINDOW_AUTOSIZE);
+    imshow("Front Image", front_image);
+
+    namedWindow("Unsteganographed Image", WINDOW_AUTOSIZE);
+    imshow("Unsteganographed Image", unsteged_image);
+
+    waitKey(0);
 
     return 0;
 }
