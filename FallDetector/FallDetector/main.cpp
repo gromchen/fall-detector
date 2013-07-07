@@ -1,34 +1,47 @@
+#include <iostream>
+
 #ifdef _WIN32
 #include <vld.h> // Visual Leak Detector
 #endif
 
-#include "utilities.h"
-
+#include <opencv2/core/core.hpp> // Basic OpenCV data structures
 #include <opencv2/highgui/highgui.hpp> // OpenCV interface
 #include <opencv2/imgproc/imgproc.hpp> // Image processing module
 
+using namespace std;
 using namespace cv;
 
 int main(int argc, char** argv)
 {
-    Mat image, gray, edge, cedge;
-    int edgeThresh = 10;
+    Mat image;
+    Mat gray;
+    char key = 0;
 
-    image = imread("lena.png");
-    gray.create(image.rows, image.cols, CV_8UC1);
-    cvtColor(image, gray, CV_BGR2GRAY);
+    VideoCapture capture(0);
 
-    cedge.create(gray.size(), gray.type());
+    if (!capture.isOpened())
+    {
+        cout << "Failed to open a video device or video file!" << endl;
+        return 1;
+    }
 
-    Canny(gray, edge, edgeThresh, edgeThresh * 3, 3);
-    cedge = Scalar::all(0);
+    capture.set(CV_CAP_PROP_FRAME_WIDTH, 640);
+    capture.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
 
-    image.copyTo(cedge, edge);
+    namedWindow("Camera Video", CV_WINDOW_AUTOSIZE);
+    namedWindow("Processed Video", CV_WINDOW_AUTOSIZE);
 
-    namedWindow("Output Image", CV_WINDOW_AUTOSIZE);
-    imshow("Output Image", cedge);
+    while (key != 'q')
+    {
+        capture >> image;
 
-    waitKey(0);
+        cvtColor(image, gray, CV_BGR2GRAY);
+
+        imshow("Camera Video", image);
+        imshow("Processed Video", gray);
+
+        key = waitKey(25);
+    }
 
     return 0;
 }
