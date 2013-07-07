@@ -14,7 +14,7 @@ namespace fd
     void thresholding(cv::Mat &image, uchar thresh_value);
 
     /// <summary>
-    /// Puts image inside another one
+    /// Puts image inside another
     /// </summary>
     /// <param name="front_image">Image which must be visible</param>
     /// <param name="hidden_image">Image which will be hidden</param>
