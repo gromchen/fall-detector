@@ -1,4 +1,5 @@
 #include <iostream>
+#include <chrono>
 
 #ifdef _WIN32
 #include <vld.h> // Visual Leak Detector
@@ -9,6 +10,7 @@
 #include <opencv2/imgproc/imgproc.hpp> // Image processing module
 
 using namespace std;
+using namespace std::chrono;
 using namespace cv;
 
 int hey = 0;
@@ -52,22 +54,34 @@ int main(int argc, char** argv)
     Mat canny;
 
     char key = 0;
+    bool show_ui = false;
 
     while (key != 'q')
     {
+        auto t0 = high_resolution_clock::now();
+
+        if (key == 'w')
+        {
+            show_ui = !show_ui;
+        }
+
         capture >> image;
-        imshow(camera_video, image);
-
         cvtColor(image, gray, CV_BGR2GRAY);
-        imshow(processed_video, gray);
-
         GaussianBlur(gray, blur, Size(5, 5), 0);
-        imshow(blurred_video, blur);
-
         Canny(blur, canny, 10, hey);
-        imshow(canny_video, canny);
+        
+        if (show_ui)
+        {
+            imshow(camera_video, image);
+            imshow(processed_video, gray);
+            imshow(blurred_video, blur);
+            imshow(canny_video, canny);
+        }
 
-        key = waitKey(25);
+        key = waitKey(1);
+
+        system("CLS"); // TODO: remove
+        cout << 1000 / duration_cast<milliseconds>(high_resolution_clock::now() - t0).count() << " fps" << endl;
     }
 
     return 0;
