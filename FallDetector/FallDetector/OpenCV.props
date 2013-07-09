@@ -8,7 +8,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <Link>
-      <AdditionalDependencies>opencv_core245d.lib;opencv_highgui245d.lib;opencv_imgproc245d.lib;opencv_features2d245d.lib;opencv_calib3d245d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opencv_core246d.lib;opencv_highgui246d.lib;opencv_imgproc246d.lib;opencv_features2d246d.lib;opencv_calib3d246d.lib;opencv_video246d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ProjectReference />
   </ItemDefinitionGroup>

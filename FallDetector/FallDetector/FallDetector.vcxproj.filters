@@ -23,14 +23,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="lena.png">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="girlface.png">
-      <Filter>Resource Files</Filter>
-    </Image>
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="utilities.h">
       <Filter>Header Files</Filter>
     </ClInclude>
