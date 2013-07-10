@@ -1,4 +1,5 @@
 #include <iostream>
+#include <thread>
 
 #ifdef _WIN32
 #include <vld.h> // Visual Leak Detector
@@ -15,7 +16,23 @@ int main(int argc, char** argv)
     {
         VideoProcessor videoProcessor{};
 
-        videoProcessor.Run();
+        thread videoProcessing{ &VideoProcessor::Run, &videoProcessor };
+
+        while (true)
+        {
+            char key = 0; 
+            cin >> key;
+            videoProcessor.SetKey(key);
+
+            if (key == 'q')
+            {
+                break;
+            }
+        }
+
+        cout << "Waiting video processing thread..." << endl;
+
+        videoProcessing.join();
     }
     catch (runtime_error ex)
     {

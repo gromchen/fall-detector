@@ -2,13 +2,13 @@
 
 #include <chrono>
 
-#ifdef _WIN32
-#include <conio.h>
-#endif
-
-#ifdef __linux__
-#include <curses.h>
-#endif
+//#ifdef _WIN32
+//#include <conio.h>
+//#endif
+//
+//#ifdef __linux__
+//#include <curses.h>
+//#endif
 
 
 #include <opencv2/imgproc/imgproc.hpp>
@@ -46,6 +46,14 @@ namespace FallDetector
     void VideoProcessor::SetFrameProcessor(void (*frameProcessingCallback)(const Mat&, Mat&))
     {
         process = frameProcessingCallback;
+    }
+
+    void VideoProcessor::SetKey(char key)
+    {
+        unique_lock<mutex> lck { _mutexInput };
+        _key = key;
+        //_conditionInput.notify_one();
+        lck.unlock();
     }
 
     void VideoProcessor::Run()
@@ -127,27 +135,29 @@ namespace FallDetector
 
     void VideoProcessor::updateInput()
     {
-        if (_kbhit())
-        {
-            _key = _getch();
-        }
+        unique_lock<mutex> lck{ _mutexInput };
+        //_conditionInput.wait(lck);
 
         switch (_key)
         {
         case 'q':
             _stop = true;
+            _key = 0;
             break;
         case 's':
             startDisplayUI();
+            _key = 0;
             break;
         case 'd':
             stopDisplayUI();
+            _key = 0;
             break;
         default:
             break;
         }
 
-        _key = 0;
+        //_key = 0;
+        lck.unlock();
     }
 
     void VideoProcessor::updateUI()

@@ -1,6 +1,9 @@
 #ifndef FD_VIDEO_PROCESSOR_H
 #define FD_VIDEO_PROCESSOR_H
 
+#include <mutex>
+#include <condition_variable>
+
 #include <opencv2/highgui/highgui.hpp>
 
 namespace FallDetector
@@ -29,11 +32,18 @@ namespace FallDetector
         void SetFrameProcessor(void (*frameProcessingCallback)(const cv::Mat&, cv::Mat&));
 
         /// <summary>
+        /// Sets key value which is processed as input
+        /// </summary>
+        /// <param name="key">Key</param>
+        /// <returns>Nothing</returns>
+        void SetKey(char key);
+
+        /// <summary>
         /// Grabs and processes the frames of the sequence
         /// </summary>
         /// <returns>Nothing</returns>
         void Run();
-
+        
     private:
         /// <summary>
         /// Start display frames
@@ -123,6 +133,16 @@ namespace FallDetector
         /// Frames per second
         /// </summary>
         double _fps;
+
+        /// <summary>
+        /// For input mutex
+        /// </summary>
+        std::condition_variable _conditionInput;
+
+        /// <summary>
+        /// Protects input
+        /// </summary>
+        std::mutex _mutexInput;
     };
 }
 
