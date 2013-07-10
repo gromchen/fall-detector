@@ -1,7 +1,15 @@
 #include "VideoProcessor.h"
 
 #include <chrono>
+
+#ifdef _WIN32
 #include <conio.h>
+#endif
+
+#ifdef __linux__
+#include <curses.h>
+#endif
+
 
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/video/background_segm.hpp>
