@@ -56,6 +56,15 @@ namespace FallDetector
         lck.unlock();
     }
 
+    int VideoProcessor::GetHeight()
+    {
+        unique_lock<mutex> lck { _mutexOutput };
+        int height = _heightOfRectangle;
+        lck.unlock();
+
+        return height;
+    }
+
     void VideoProcessor::Run()
     {
         if (!_videoCapture.isOpened())
@@ -88,22 +97,19 @@ namespace FallDetector
 
             findContours(_frameWithForeground, contours, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
 
-            unsigned int cmin = 50;
+            unsigned int cmin = 100;
             unsigned int cmax = 1000;
 
-            vector<vector<Point>>::iterator itc = contours.begin();
-
+            auto itc = contours.begin();
+            vector<Point> pts;
             while (itc != contours.end())
             {
                 if (itc->size() > cmin && itc->size() < cmax)
                 {
-                    vector<Point> pts = *itc;
-                    Mat pointsMatrix = Mat(pts);
-                    Scalar color(0, 255, 0);
-
-                    Rect boundingRectangle = boundingRect(pointsMatrix);
-                    _heightOfRectangle = boundingRectangle.height;
-                    rectangle(_originalFrame, boundingRectangle, color, 2);
+                    for (auto pnt : *itc)
+                    {
+                        pts.push_back(pnt);
+                    }
 
                     ++itc;
                 }
@@ -113,8 +119,22 @@ namespace FallDetector
                 }
             }
 
+            if (pts.size() != 0)
+            {
+                Mat pointsMatrix = Mat(pts);
+                Scalar color(0, 255, 0);
+
+                Rect boundingRectangle = boundingRect(pointsMatrix);
+                
+                unique_lock<mutex> lck { _mutexOutput };
+                _heightOfRectangle = boundingRectangle.height;
+                lck.unlock();
+                
+                rectangle(_originalFrame, boundingRectangle, color, 2);
+            }
+
             updateUI();
-            waitKey(1);
+            waitKey(25); // TODO: check _showUI
             _fps = 1000.0 / duration_cast<milliseconds>(high_resolution_clock::now() - timeOfProcessingStart).count();
         }
     }

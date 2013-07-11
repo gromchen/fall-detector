@@ -39,6 +39,12 @@ namespace FallDetector
         void SetKey(char key);
 
         /// <summary>
+        /// Gets height of bounding rectangle
+        /// </summary>
+        /// <returns>Height</returns>
+        int GetHeight();
+
+        /// <summary>
         /// Grabs and processes the frames of the sequence
         /// </summary>
         /// <returns>Nothing</returns>
@@ -135,14 +141,14 @@ namespace FallDetector
         double _fps;
 
         /// <summary>
-        /// For input mutex
-        /// </summary>
-        std::condition_variable _conditionInput;
-
-        /// <summary>
         /// Protects input
         /// </summary>
         std::mutex _mutexInput;
+
+        /// <summary>
+        /// Protects output
+        /// </summary>
+        std::mutex _mutexOutput;
     };
 }
 
