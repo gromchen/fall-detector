@@ -1,10 +1,7 @@
-#ifndef FD_VIDEO_PROCESSOR_H
-#define FD_VIDEO_PROCESSOR_H
+#ifndef FALL_DETECTOR_VIDEO_PROCESSOR_H
+#define FALL_DETECTOR_VIDEO_PROCESSOR_H
 
-#include <mutex>
-#include <condition_variable>
-
-#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/opencv.hpp>
 
 namespace FallDetector
 {
@@ -49,7 +46,7 @@ namespace FallDetector
         /// </summary>
         /// <returns>Nothing</returns>
         void Run();
-        
+
     private:
         /// <summary>
         /// Start display frames
@@ -143,13 +140,13 @@ namespace FallDetector
         /// <summary>
         /// Protects input
         /// </summary>
-        std::mutex _mutexInput;
+        //std::mutex _mutexInput;
 
         /// <summary>
         /// Protects output
         /// </summary>
-        std::mutex _mutexOutput;
+        //std::mutex _mutexOutput;
     };
 }
 
-#endif // !FD_VIDEO_PROCESSOR_H
+#endif // !FALL_DETECTOR_VIDEO_PROCESSOR_H
