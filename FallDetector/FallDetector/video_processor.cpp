@@ -20,7 +20,7 @@ VideoProcessor::VideoProcessor()
 
     _stop = false;
     _key = 0;
-    _showUI = false;
+    _showUI = true;
 
     _nameOfInputWindow = "Original Video";
     _nameOfOutputWindow = "Output Video";
@@ -57,8 +57,8 @@ void VideoProcessor::Run()
     vector<Vec4i> hierarchy;
     _stop = false;
     vector<vector<Point>> contours{};
-    while (!_stop)
-    {
+    //while (!_stop)
+    //{
         auto timeOfProcessingStart = high_resolution_clock::now();
 
         updateInput();
@@ -77,7 +77,7 @@ void VideoProcessor::Run()
         //dilate(foreground, foreground, Mat());
 
 
-        findContours(_frameWithForeground, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
+        //findContours(_frameWithForeground, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
 
         unsigned int cmin = 100;
         unsigned int cmax = 1000;
@@ -114,13 +114,10 @@ void VideoProcessor::Run()
         }
 
         updateUI();
-
-        if (_showUI)
-        {
-            waitKey(25); // TODO: check _showUI
-        }
+        //_key = waitKey(25);
+        //cout << "hey" << endl;
         _fps = 1000.0 / duration_cast<milliseconds>(high_resolution_clock::now() - timeOfProcessingStart).count();
-    }
+    //}
 }
 
 void VideoProcessor::startDisplayUI()
@@ -139,6 +136,11 @@ void VideoProcessor::stopDisplayUI()
 
 void VideoProcessor::updateInput()
 {
+    if (_key != -1)
+    {
+        cout << "hello" << endl;
+    }
+
     switch (_key)
     {
     case 'q':

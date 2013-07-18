@@ -1,5 +1,3 @@
-#include <iostream>
-
 #include "video_processor.h"
 
 using namespace std;
@@ -11,7 +9,17 @@ int main()
     try
     {
         VideoProcessor videoProcessor;
-        videoProcessor.Run();
+        while (true)
+        {
+            videoProcessor.Run();
+
+            char key = waitKey(25);
+
+            if (key == 'q')
+            {
+                break;
+            }
+        }
 
         //videoProcessor.SetKey(key);
 
