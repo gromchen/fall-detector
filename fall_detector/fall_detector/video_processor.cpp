@@ -56,10 +56,9 @@ namespace FallDetector
 		}
 
 		BackgroundSubtractorMOG2 bg_subtractor(1000, 15);
-
 		vector<Vec4i> hierarchy;
-		_stop = false;
 		vector<vector<Point> > contours;
+		
 		while (!_stop)
 		{
 			auto timeOfProcessingStart = high_resolution_clock::now();
