@@ -27,15 +27,20 @@ namespace FallDetector
         /// Sets the callback function that will be called for each frame
         /// </summary>
         /// <param name="frameProcessingCallback">Frame processing callback</param>
-        /// <returns>Nothing</returns>
         void SetFrameProcessor(void (*frameProcessingCallback)(const cv::Mat&, cv::Mat&));
 
         /// <summary>
         /// Sets key value which is processed as input
         /// </summary>
         /// <param name="key">Key</param>
-        /// <returns>Nothing</returns>
         void SetKey(char key);
+
+        /// <summary>
+        /// Sets resolution of the frame
+        /// </summary>
+        /// <param name="width">Frame width</param>
+        /// <param name="height">Frame height</param>
+        void SetResolution(int width, int height);
 
         /// <summary>
         /// Gets height of bounding rectangle
@@ -46,38 +51,33 @@ namespace FallDetector
         /// <summary>
         /// Grabs and processes the frames of the sequence
         /// </summary>
-        /// <returns>Nothing</returns>
         void Run();
 
     private:
         /// <summary>
         /// Start display frames
         /// </summary>
-        /// <returns>Nothing</returns>
         void startDisplayUI();
 
         /// <summary>
         /// Stop display frames
         /// </summary>
-        /// <returns>Nothing</returns>
         void stopDisplayUI();
 
         /// <summary>
         /// Updates user input
         /// </summary>
-        /// <returns>Nothing</returns>
         void updateInput();
 
         /// <summary>
         /// Updates UI
         /// </summary>
-        /// <returns>Nothing</returns>
         void updateUI();
 
         /// <summary>
         /// OpenCV video capture object
         /// </summary>
-        cv::VideoCapture _videoCapture;
+        cv::VideoCapture m_videoCapture;
 
         /// <summary>
         /// Callback function to be called for the processing of each frame
@@ -117,7 +117,7 @@ namespace FallDetector
         /// <summary>
         /// Stop the processing
         /// </summary>
-        bool _stop;
+        bool m_stop;
 
         /// <summary>
         /// Height of bounding rectangle
@@ -127,12 +127,12 @@ namespace FallDetector
         /// <summary>
         /// Pressed key
         /// </summary>
-        char _key;
+        char m_key;
 
         /// <summary>
         /// Determine whether the user interface is shown
         /// </summary>
-        bool _showUI;
+        bool m_showUI;
 
         /// <summary>
         /// Frames per second
@@ -148,6 +148,11 @@ namespace FallDetector
         /// Protects output
         /// </summary>
         //std::mutex _mutexOutput;
+
+        /// <summary>
+        /// Protects video capture
+        /// </summary>
+        std::mutex  m_mutexForVideoCapture;
     };
 }
 
