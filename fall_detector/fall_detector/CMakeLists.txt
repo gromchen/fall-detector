@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 2.8)
+project(FallDetector)
+ADD_DEFINITIONS(-std=c++0x)
+find_package(OpenCV REQUIRED)
+AUX_SOURCE_DIRECTORY(${CMAKE_CURRENT_SOURCE_DIR} SOURCES)
+add_executable(FallDetector ${SOURCES})
+target_link_libraries(FallDetector ${OpenCV_LIBS} -lncurses)
