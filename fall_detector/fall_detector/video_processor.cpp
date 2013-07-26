@@ -21,6 +21,7 @@ namespace FallDetector
         m_stop = false;
         m_showUI = false;
         m_windowsAreCreated = false;
+        mChangeResolution = false;
 
         m_nameOfInputWindow = "Original Video";
         m_nameOfOutputWindow = "Output Video";
@@ -33,8 +34,9 @@ namespace FallDetector
     void VideoProcessor::SetResolution(int width, int height)
     {
         unique_lock<mutex> lockForVideoCapture(m_mutexForVideoCapture);
-        m_videoCapture.set(CV_CAP_PROP_FRAME_WIDTH, width);
-        m_videoCapture.set(CV_CAP_PROP_FRAME_HEIGHT, height);
+        mChangeResolution = true;
+        mWidth = width;
+        mHeight = height;
         lockForVideoCapture.unlock();
     }
 
@@ -65,9 +67,18 @@ namespace FallDetector
         while (!m_stop)
         {
             auto timeOfProcessingStart = high_resolution_clock::now();
-
+            
             unique_lock<mutex> lockForVideoCapture(m_mutexForVideoCapture);
+            
+            if(mChangeResolution)
+            {
+                m_videoCapture.set(CV_CAP_PROP_FRAME_WIDTH, mWidth);
+                m_videoCapture.set(CV_CAP_PROP_FRAME_HEIGHT, mHeight);
+                mChangeResolution = false;
+            }
+
             bool frameIsRead = m_videoCapture.read(_originalFrame);
+            
             lockForVideoCapture.unlock();
 
             if (!frameIsRead)
@@ -125,7 +136,7 @@ namespace FallDetector
             unique_lock<mutex> lockForShowUI(m_mutexForShowUI);
             if (m_showUI)
             {
-                showUI = m_showUI;
+            showUI = m_showUI;
             }
             lockForShowUI.unlock();*/
 
@@ -143,7 +154,7 @@ namespace FallDetector
                 //imshow(blurred_video, blur);
                 //imshow(canny_video, canny);
                 imshow(m_nameOfOutputWindow, _frameWithForeground);
-                
+
                 waitKey(25);
             }
             else

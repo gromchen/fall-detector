@@ -122,6 +122,10 @@ namespace FallDetector
         /// Protects video capture
         /// </summary>
         std::mutex  m_mutexForVideoCapture;
+
+        std::atomic<bool> mChangeResolution;
+        int mWidth;
+        int mHeight;
     };
 }
 
