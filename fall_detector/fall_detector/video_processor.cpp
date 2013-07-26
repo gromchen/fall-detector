@@ -40,9 +40,9 @@ namespace FallDetector
 
     void VideoProcessor::ShowHideGui()
     {
-        unique_lock<mutex> lockForShowUI(m_mutexForShowUI);
+        //unique_lock<mutex> lockForShowUI(m_mutexForShowUI);
         m_showUI = !m_showUI;
-        lockForShowUI.unlock();
+        //lockForShowUI.unlock();
     }
 
     int VideoProcessor::GetHeight()
@@ -61,17 +61,9 @@ namespace FallDetector
         vector<Vec4i> hierarchy;
         vector<vector<Point> > contours;
 
-        bool stop = false;
 
-        while (!stop)
+        while (!m_stop)
         {
-            unique_lock<mutex> lockForStop(m_mutexForStop);
-            if (m_stop == true)
-            {
-                stop = m_stop;
-            }
-            lockForStop.unlock();
-
             auto timeOfProcessingStart = high_resolution_clock::now();
 
             unique_lock<mutex> lockForVideoCapture(m_mutexForVideoCapture);
@@ -128,16 +120,16 @@ namespace FallDetector
                 rectangle(_originalFrame, boundingRectangle, color, 2);
             }
 
-            bool showUI = false;
+            /*bool showUI = false;
 
             unique_lock<mutex> lockForShowUI(m_mutexForShowUI);
             if (m_showUI)
             {
                 showUI = m_showUI;
             }
-            lockForShowUI.unlock();
+            lockForShowUI.unlock();*/
 
-            if (showUI)
+            if (m_showUI)
             {
                 if(m_windowsAreCreated == false)
                 {
@@ -170,8 +162,6 @@ namespace FallDetector
 
     void VideoProcessor::Stop()
     {
-        unique_lock<mutex> lck(m_mutexForStop);
         m_stop = true;
-        lck.unlock();
     }
 }
