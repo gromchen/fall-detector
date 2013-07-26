@@ -24,18 +24,6 @@ namespace FallDetector
         ~VideoProcessor();
 
         /// <summary>
-        /// Sets the callback function that will be called for each frame
-        /// </summary>
-        /// <param name="frameProcessingCallback">Frame processing callback</param>
-        void SetFrameProcessor(void (*frameProcessingCallback)(const cv::Mat&, cv::Mat&));
-
-        /// <summary>
-        /// Sets key value which is processed as input
-        /// </summary>
-        /// <param name="key">Key</param>
-        void SetKey(char key);
-
-        /// <summary>
         /// Sets resolution of the frame
         /// </summary>
         /// <param name="width">Frame width</param>
@@ -43,15 +31,25 @@ namespace FallDetector
         void SetResolution(int width, int height);
 
         /// <summary>
+        /// Shows or hides GUI depending on current state
+        /// </summary>
+        void ShowHideGui();
+
+        /// <summary>
         /// Gets height of bounding rectangle
         /// </summary>
         /// <returns>Height</returns>
-        int GetHeight();
+        int GetHeight(); // Obtain graph
 
         /// <summary>
         /// Grabs and processes the frames of the sequence
         /// </summary>
         void Run();
+
+        /// <summary>
+        /// Stops run
+        /// </summary>
+        void Stop();
 
     private:
         /// <summary>
@@ -65,39 +63,19 @@ namespace FallDetector
         void stopDisplayUI();
 
         /// <summary>
-        /// Updates user input
-        /// </summary>
-        void updateInput();
-
-        /// <summary>
-        /// Updates UI
-        /// </summary>
-        void updateUI();
-
-        /// <summary>
         /// OpenCV video capture object
         /// </summary>
         cv::VideoCapture m_videoCapture;
 
         /// <summary>
-        /// Callback function to be called for the processing of each frame
-        /// </summary>
-        void (*process)(const cv::Mat&, cv::Mat&);
-
-        /// <summary>
-        /// Determine if the process callback will be called
-        /// </summary>
-        bool _callProcessCallback;
-
-        /// <summary>
         /// Input display window name
         /// </summary>
-        std::string _nameOfInputWindow;
+        std::string m_nameOfInputWindow;
 
         /// <summary>
         /// Output display window name
         /// </summary>
-        std::string _nameOfOutputWindow;
+        std::string m_nameOfOutputWindow;
 
         /// <summary>
         /// Original frame from camera
@@ -125,14 +103,14 @@ namespace FallDetector
         int _heightOfRectangle;
 
         /// <summary>
-        /// Pressed key
-        /// </summary>
-        char m_key;
-
-        /// <summary>
         /// Determine whether the user interface is shown
         /// </summary>
         bool m_showUI;
+
+        /// <summary>
+        /// Determine whether windows of GUI were created
+        /// </summary>
+        bool m_windowsAreCreated;
 
         /// <summary>
         /// Frames per second
@@ -142,12 +120,17 @@ namespace FallDetector
         /// <summary>
         /// Protects input
         /// </summary>
-        std::mutex m_mutexInput;
+        std::mutex m_mutexInput; // TODO: encapsulate
 
         /// <summary>
-        /// Protects output
+        /// Protects stop of run
         /// </summary>
-        //std::mutex _mutexOutput;
+        std::mutex m_mutexForStop;
+
+        /// <summary>
+        /// Protects stop of run
+        /// </summary>
+        std::mutex m_mutexForShowUI;
 
         /// <summary>
         /// Protects video capture

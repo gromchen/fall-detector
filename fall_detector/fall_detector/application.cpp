@@ -38,14 +38,15 @@ namespace FallDetector
             char key;
 
             cin >> key;
-            m_videoProcessor.SetKey(key); // TODO: change to functions
             
             switch (key)
             {
             case 'q':
+                m_videoProcessor.Stop();
                 stop = true;
                 break;
             case 'i':
+                m_videoProcessor.ShowHideGui();
                 break;
             case 'r':
                 handleResolution();

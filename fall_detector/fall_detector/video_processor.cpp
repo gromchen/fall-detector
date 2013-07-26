@@ -9,7 +9,6 @@ using namespace cv;
 namespace FallDetector
 {
     VideoProcessor::VideoProcessor()
-        : _callProcessCallback(true)
     {
         if (!m_videoCapture.open(0))
         {
@@ -20,27 +19,15 @@ namespace FallDetector
         m_videoCapture.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
 
         m_stop = false;
-        m_key = 0;
         m_showUI = false;
+        m_windowsAreCreated = false;
 
-        _nameOfInputWindow = "Original Video";
-        _nameOfOutputWindow = "Output Video";
+        m_nameOfInputWindow = "Original Video";
+        m_nameOfOutputWindow = "Output Video";
     }
 
     VideoProcessor::~VideoProcessor()
     {
-    }
-
-    void VideoProcessor::SetFrameProcessor(void (*frameProcessingCallback)(const Mat&, Mat&))
-    {
-        process = frameProcessingCallback;
-    }
-
-    void VideoProcessor::SetKey(char key)
-    {
-        unique_lock<mutex> lck(m_mutexInput);
-        m_key = key;
-        lck.unlock();
     }
 
     void VideoProcessor::SetResolution(int width, int height)
@@ -49,6 +36,13 @@ namespace FallDetector
         m_videoCapture.set(CV_CAP_PROP_FRAME_WIDTH, width);
         m_videoCapture.set(CV_CAP_PROP_FRAME_HEIGHT, height);
         lockForVideoCapture.unlock();
+    }
+
+    void VideoProcessor::ShowHideGui()
+    {
+        unique_lock<mutex> lockForShowUI(m_mutexForShowUI);
+        m_showUI = !m_showUI;
+        lockForShowUI.unlock();
     }
 
     int VideoProcessor::GetHeight()
@@ -67,11 +61,18 @@ namespace FallDetector
         vector<Vec4i> hierarchy;
         vector<vector<Point> > contours;
 
-        while (!m_stop)
-        {
-            auto timeOfProcessingStart = high_resolution_clock::now();
+        bool stop = false;
 
-            updateInput();
+        while (!stop)
+        {
+            unique_lock<mutex> lockForStop(m_mutexForStop);
+            if (m_stop == true)
+            {
+                stop = m_stop;
+            }
+            lockForStop.unlock();
+
+            auto timeOfProcessingStart = high_resolution_clock::now();
 
             unique_lock<mutex> lockForVideoCapture(m_mutexForVideoCapture);
             bool frameIsRead = m_videoCapture.read(_originalFrame);
@@ -127,66 +128,50 @@ namespace FallDetector
                 rectangle(_originalFrame, boundingRectangle, color, 2);
             }
 
-            updateUI();
+            bool showUI = false;
 
+            unique_lock<mutex> lockForShowUI(m_mutexForShowUI);
             if (m_showUI)
             {
+                showUI = m_showUI;
+            }
+            lockForShowUI.unlock();
+
+            if (showUI)
+            {
+                if(m_windowsAreCreated == false)
+                {
+                    namedWindow(m_nameOfInputWindow, CV_WINDOW_AUTOSIZE);
+                    namedWindow(m_nameOfOutputWindow, CV_WINDOW_AUTOSIZE);
+                    m_windowsAreCreated = true;
+                }
+
+                imshow(m_nameOfInputWindow, _originalFrame);
+                //imshow(processed_video, gray);
+                //imshow(blurred_video, blur);
+                //imshow(canny_video, canny);
+                imshow(m_nameOfOutputWindow, _frameWithForeground);
+                
                 waitKey(25);
+            }
+            else
+            {
+                if (m_windowsAreCreated)
+                {
+                    destroyWindow(m_nameOfInputWindow);
+                    destroyWindow(m_nameOfOutputWindow);
+                    m_windowsAreCreated = false;
+                }
             }
 
             _fps = 1000.0 / duration_cast<milliseconds>(high_resolution_clock::now() - timeOfProcessingStart).count();
         }
     }
 
-    void VideoProcessor::startDisplayUI()
+    void VideoProcessor::Stop()
     {
-        m_showUI = true;
-        namedWindow(_nameOfInputWindow, CV_WINDOW_AUTOSIZE);
-        namedWindow(_nameOfOutputWindow, CV_WINDOW_AUTOSIZE);
-    }
-
-    void VideoProcessor::stopDisplayUI()
-    {
-        m_showUI = false;
-        destroyWindow(_nameOfInputWindow);
-        destroyWindow(_nameOfOutputWindow);
-    }
-
-    void VideoProcessor::updateInput()
-    {
-        unique_lock<mutex> lck(m_mutexInput);
-
-        switch (m_key)
-        {
-        case 'q':
-            m_stop = true;
-            break;
-        case 'i':
-            if(m_showUI)
-                stopDisplayUI();
-            else
-                startDisplayUI();
-            break;
-        case 'r':
-
-            break;
-        default:
-            break;
-        }
-        m_key = 0;
-
+        unique_lock<mutex> lck(m_mutexForStop);
+        m_stop = true;
         lck.unlock();
-    }
-
-    void VideoProcessor::updateUI()
-    {
-        if (m_showUI)
-        {
-            imshow(_nameOfInputWindow, _originalFrame);
-            //imshow(processed_video, gray);
-            //imshow(blurred_video, blur);
-            //imshow(canny_video, canny);
-            imshow(_nameOfOutputWindow, _frameWithForeground);
-        }
     }
 }
