@@ -10,13 +10,16 @@ namespace FallDetector
 {
     VideoProcessor::VideoProcessor()
     {
-        if (!m_videoCapture.open(0))
+        if (!mVideoCapture.open(0))
         {
             throw runtime_error("Could not open video device");
         }
 
-        m_videoCapture.set(CV_CAP_PROP_FRAME_WIDTH, 640);
-        m_videoCapture.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
+        mVideoCapture.set(CV_CAP_PROP_FRAME_WIDTH, 640);
+        mVideoCapture.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
+
+        //mVideoCapture.set(CV_CAP_PROP_FOCUS, 0);
+        //double focus = mVideoCapture.get(CV_CAP_PROP_FOCUS);
 
         m_stop = false;
         m_showUI = false;
@@ -54,7 +57,7 @@ namespace FallDetector
 
     void VideoProcessor::Run()
     {
-        if (!m_videoCapture.isOpened())
+        if (!mVideoCapture.isOpened())
         {
             throw runtime_error("Video device is not opened.");
         }
@@ -67,18 +70,18 @@ namespace FallDetector
         while (!m_stop)
         {
             auto timeOfProcessingStart = high_resolution_clock::now();
-            
+
             unique_lock<mutex> lockForVideoCapture(m_mutexForVideoCapture);
-            
+
             if(mChangeResolution)
             {
-                m_videoCapture.set(CV_CAP_PROP_FRAME_WIDTH, mWidth);
-                m_videoCapture.set(CV_CAP_PROP_FRAME_HEIGHT, mHeight);
+                mVideoCapture.set(CV_CAP_PROP_FRAME_WIDTH, mWidth);
+                mVideoCapture.set(CV_CAP_PROP_FRAME_HEIGHT, mHeight);
                 mChangeResolution = false;
             }
 
-            bool frameIsRead = m_videoCapture.read(_originalFrame);
-            
+            bool frameIsRead = mVideoCapture.read(_originalFrame);
+
             lockForVideoCapture.unlock();
 
             if (!frameIsRead)

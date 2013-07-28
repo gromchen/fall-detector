@@ -66,7 +66,7 @@ namespace FallDetector
         /// <summary>
         /// OpenCV video capture object
         /// </summary>
-        cv::VideoCapture m_videoCapture;
+        cv::VideoCapture mVideoCapture;
 
         /// <summary>
         /// Input display window name
