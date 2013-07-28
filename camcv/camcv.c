@@ -137,9 +137,6 @@ typedef struct
    RASPISTILL_STATE *pstate;            /// pointer to our state in case required in callback
 } PORT_USERDATA;
 
-static void display_valid_parameters(char *app_name);
-static void store_exif_tag(RASPISTILL_STATE *state, const char *exif_tag);
-
 /// Comamnd ID's and Structure defining our command line options
 #define CommandHelp         0
 #define CommandWidth        1
@@ -232,281 +229,6 @@ static void default_status(RASPISTILL_STATE *state)
 
    // Set up the camera_parameters to default
    raspicamcontrol_set_defaults(&state->camera_parameters);
-}
-
-/**
- * Dump image state parameters to stderr. Used for debugging
- *
- * @param state Pointer to state structure to assign defaults to
- */
-static void dump_status(RASPISTILL_STATE *state)
-{
-   int i;
-
-   if (!state)
-   {
-      vcos_assert(0);
-      return;
-   }
-
-   fprintf(stderr, "Width %d, Height %d, quality %d, filename %s\n", state->width,
-         state->height, state->quality, state->filename);
-   fprintf(stderr, "Time delay %d, Raw %s\n", state->timeout,
-         state->wantRAW ? "yes" : "no");
-   fprintf(stderr, "Thumbnail enabled %s, width %d, height %d, quality %d\n",
-         state->thumbnailConfig.enable ? "Yes":"No", state->thumbnailConfig.width,
-         state->thumbnailConfig.height, state->thumbnailConfig.quality);
-   fprintf(stderr, "Full resolution preview %s\n\n", state->fullResPreview ? "Yes": "No");
-
-   if (state->numExifTags)
-   {
-      fprintf(stderr, "User supplied EXIF tags :\n");
-
-      for (i=0;i<state->numExifTags;i++)
-      {
-         fprintf(stderr, "%s", state->exifTags[i]);
-         if (i != state->numExifTags-1)
-            fprintf(stderr, ",");
-      }
-      fprintf(stderr, "\n\n");
-   }
-
-   raspipreview_dump_parameters(&state->preview_parameters);
-   raspicamcontrol_dump_parameters(&state->camera_parameters);
-}
-
-/**
- * Parse the incoming command line and put resulting parameters in to the state
- *
- * @param argc Number of arguments in command line
- * @param argv Array of pointers to strings from command line
- * @param state Pointer to state structure to assign any discovered parameters to
- * @return non-0 if failed for some reason, 0 otherwise
- */
-static int parse_cmdline(int argc, const char **argv, RASPISTILL_STATE *state)
-{
-   // Parse the command line arguments.
-   // We are looking for --<something> or -<abreviation of something>
-
-   int valid = 1;
-   int i;
-
-   for (i = 1; i < argc && valid; i++)
-   {
-      int command_id, num_parameters;
-
-      if (!argv[i])
-         continue;
-
-      if (argv[i][0] != '-')
-      {
-         valid = 0;
-         continue;
-      }
-
-      // Assume parameter is valid until proven otherwise
-      valid = 1;
-
-      command_id = raspicli_get_command_id(cmdline_commands, cmdline_commands_size, &argv[i][1], &num_parameters);
-
-      // If we found a command but are missing a parameter, continue (and we will drop out of the loop)
-      if (command_id != -1 && num_parameters > 0 && (i + 1 >= argc) )
-         continue;
-
-      //  We are now dealing with a command line option
-      switch (command_id)
-      {
-      case CommandHelp:
-         display_valid_parameters(basename(argv[0]));
-         // exit straight away if help requested
-         return -1;
-
-      case CommandWidth: // Width > 0
-         if (sscanf(argv[i + 1], "%u", &state->width) != 1)
-            valid = 0;
-         else
-            i++;
-         break;
-
-      case CommandHeight: // Height > 0
-         if (sscanf(argv[i + 1], "%u", &state->height) != 1)
-            valid = 0;
-         else
-            i++;
-         break;
-
-      case CommandQuality: // Quality = 1-100
-         if (sscanf(argv[i + 1], "%u", &state->quality) == 1)
-         {
-            if (state->quality > 100)
-            {
-               fprintf(stderr, "Setting max quality = 100\n");
-               state->quality = 100;
-            }
-            i++;
-         }
-         else
-            valid = 0;
-
-         break;
-
-      case CommandRaw: // Add raw bayer data in metadata
-         state->wantRAW = 1;
-         break;
-
-      case CommandOutput:  // output filename
-      {
-         int len = strlen(argv[i + 1]);
-         if (len)
-         {
-            state->filename = malloc(len + 10); // leave enough space for any timelapse generated changes to filename
-            vcos_assert(state->filename);
-            if (state->filename)
-               strncpy(state->filename, argv[i + 1], len);
-            i++;
-         }
-         else
-            valid = 0;
-         break;
-      }
-
-      case CommandVerbose: // display lots of data during run
-         state->verbose = 1;
-         break;
-
-      case CommandTimeout: // Time to run viewfinder for before taking picture, in seconds
-      {
-         if (sscanf(argv[i + 1], "%u", &state->timeout) == 1)
-         {
-            // TODO : What limits do we need for timeout?
-            i++;
-         }
-         else
-            valid = 0;
-         break;
-      }
-      case CommandThumbnail : // thumbnail parameters - needs string "x:y:quality"
-         sscanf(argv[i + 1], "%d:%d:%d", &state->thumbnailConfig.width,&state->thumbnailConfig.height,
-                  &state->thumbnailConfig.quality);
-         i++;
-         break;
-
-      case CommandDemoMode: // Run in demo mode - no capture
-      {
-         // Demo mode might have a timing parameter
-         // so check if a) we have another parameter, b) its not the start of the next option
-         if (i + 1 < argc  && argv[i+1][0] != '-')
-         {
-            if (sscanf(argv[i + 1], "%u", &state->demoInterval) == 1)
-            {
-               // TODO : What limits do we need for timeout?
-               state->demoMode = 1;
-               i++;
-            }
-            else
-               valid = 0;
-         }
-         else
-         {
-            state->demoMode = 1;
-         }
-
-         break;
-      }
-
-      case CommandEncoding :
-      {
-         int len = strlen(argv[i + 1]);
-         valid = 0;
-
-         if (len)
-         {
-            int j;
-            for (j=0;j<encoding_xref_size;j++)
-            {
-               if (strcmp(encoding_xref[j].format, argv[i+1]) == 0)
-               {
-                  state->encoding = encoding_xref[j].encoding;
-                  valid = 1;
-                  i++;
-                  break;
-               }
-            }
-         }
-         break;
-      }
-
-      case CommandExifTag:
-         store_exif_tag(state, argv[i+1]);
-         i++;
-         break;
-
-      case CommandTimelapse:
-         if (sscanf(argv[i + 1], "%u", &state->timelapse) != 1)
-            valid = 0;
-         else
-            i++;
-         break;
-
-      case CommandFullResPreview:
-         state->fullResPreview = 1;
-         break;
-
-      default:
-      {
-         // Try parsing for any image specific parameters
-         // result indicates how many parameters were used up, 0,1,2
-         // but we adjust by -1 as we have used one already
-         const char *second_arg = (i + 1 < argc) ? argv[i + 1] : NULL;
-         int parms_used = raspicamcontrol_parse_cmdline(&state->camera_parameters, &argv[i][1], second_arg);
-
-         // Still unused, try preview options
-         if (!parms_used)
-            parms_used = raspipreview_parse_cmdline(&state->preview_parameters, &argv[i][1], second_arg);
-
-         // If no parms were used, this must be a bad parameters
-         if (!parms_used)
-            valid = 0;
-         else
-            i += parms_used - 1;
-
-         break;
-      }
-      }
-   }
-
-   if (!valid)
-   {
-      fprintf(stderr, "Invalid command line option (%s)\n", argv[i]);
-      return 1;
-   }
-
-   return 0;
-}
-
-/**
- * Display usage information for the application to stdout
- *
- * @param app_name String to display as the application name
- */
-static void display_valid_parameters(char *app_name)
-{
-   fprintf(stderr, "Runs camera for specific time, and take JPG capture at end if requested\n\n");
-   fprintf(stderr, "usage: %s [options]\n\n", app_name);
-
-   fprintf(stderr, "Image parameter commands\n\n");
-
-   raspicli_display_help(cmdline_commands, cmdline_commands_size);
-
-   // Help for preview options
-   raspipreview_display_help();
-
-   // Now display any help information from the camcontrol code
-   raspicamcontrol_display_help();
-
-   fprintf(stderr, "\n");
-
-   return;
 }
 
 /**
@@ -929,109 +651,6 @@ static void destroy_encoder_component(RASPISTILL_STATE *state)
    }
 }
 
-
-/**
- * Add an exif tag to the capture
- *
- * @param state Pointer to state control struct
- * @param exif_tag String containing a "key=value" pair.
- * @return  Returns a MMAL_STATUS_T giving result of operation
- */
-static MMAL_STATUS_T add_exif_tag(RASPISTILL_STATE *state, const char *exif_tag)
-{
-   MMAL_STATUS_T status;
-   MMAL_PARAMETER_EXIF_T *exif_param = (MMAL_PARAMETER_EXIF_T*)calloc(sizeof(MMAL_PARAMETER_EXIF_T) + MAX_EXIF_PAYLOAD_LENGTH, 1);
-
-   vcos_assert(state);
-   vcos_assert(state->encoder_component);
-
-   // Check to see if the tag is present or is indeed a key=value pair.
-   if (!exif_tag || strchr(exif_tag, '=') == NULL || strlen(exif_tag) > MAX_EXIF_PAYLOAD_LENGTH-1)
-      return MMAL_EINVAL;
-
-   exif_param->hdr.id = MMAL_PARAMETER_EXIF;
-
-   strncpy((char*)exif_param->data, exif_tag, MAX_EXIF_PAYLOAD_LENGTH-1);
-
-   exif_param->hdr.size = sizeof(MMAL_PARAMETER_EXIF_T) + strlen((char*)exif_param->data);
-
-   status = mmal_port_parameter_set(state->encoder_component->output[0], &exif_param->hdr);
-
-   free(exif_param);
-
-   return status;
-}
-
-/**
- * Add a basic set of EXIF tags to the capture
- * Make, Time etc
- *
- * @param state Pointer to state control struct
- *
- */
-static void add_exif_tags(RASPISTILL_STATE *state)
-{
-   time_t rawtime;
-   struct tm *timeinfo;
-   char time_buf[32];
-   char exif_buf[128];
-   int i;
-
-   add_exif_tag(state, "IFD0.Model=RP_OV5647");
-   add_exif_tag(state, "IFD0.Make=RaspberryPi");
-
-   time(&rawtime);
-   timeinfo = localtime(&rawtime);
-
-   snprintf(time_buf, sizeof(time_buf),
-            "%04d:%02d:%02d:%02d:%02d:%02d",
-            timeinfo->tm_year+1900,
-            timeinfo->tm_mon+1,
-            timeinfo->tm_mday,
-            timeinfo->tm_hour,
-            timeinfo->tm_min,
-            timeinfo->tm_sec);
-
-   snprintf(exif_buf, sizeof(exif_buf), "EXIF.DateTimeDigitized=%s", time_buf);
-   add_exif_tag(state, exif_buf);
-
-   snprintf(exif_buf, sizeof(exif_buf), "EXIF.DateTimeOriginal=%s", time_buf);
-   add_exif_tag(state, exif_buf);
-
-   snprintf(exif_buf, sizeof(exif_buf), "IFD0.DateTime=%s", time_buf);
-   add_exif_tag(state, exif_buf);
-
-   // Now send any user supplied tags
-
-   for (i=0;i<state->numExifTags && i < MAX_USER_EXIF_TAGS;i++)
-   {
-      if (state->exifTags[i])
-      {
-         add_exif_tag(state, state->exifTags[i]);
-      }
-   }
-}
-
-/**
- * Stores an EXIF tag in the state, incrementing various pointers as necessary.
- * Any tags stored in this way will be added to the image file when add_exif_tags
- * is called
- *
- * Will not store if run out of storage space
- *
- * @param state Pointer to state control struct
- * @param exif_tag EXIF tag string
- *
- */
-static void store_exif_tag(RASPISTILL_STATE *state, const char *exif_tag)
-{
-   if (state->numExifTags < MAX_USER_EXIF_TAGS)
-   {
-      state->exifTags[state->numExifTags] = exif_tag;
-      state->numExifTags++;
-   }
-}
-
 /**
  * Connect two specific ports together
  *
@@ -1109,27 +728,18 @@ int main(int argc, const char **argv)
    signal(SIGINT, signal_handler);
 
    default_status(&state);
+   state.filename = "foobar.jpg";
 
    // Do we have any parameters
    if (argc == 1)
    {
       fprintf(stderr, "\%s Camera App %s\n\n", basename(argv[0]), VERSION_STRING);
-
-      display_valid_parameters(basename(argv[0]));
-      exit(0);
-   }
-
-   // Parse the command line and put options in to our status structure
-   if (parse_cmdline(argc, argv, &state))
-   {
       exit(0);
    }
 
    if (state.verbose)
    {
       fprintf(stderr, "\n%s Camera App %s\n\n", basename(argv[0]), VERSION_STRING);
-
-      dump_status(&state);
    }
 
    // OK, we have a nice set of parameters. Now set up our components
@@ -1266,10 +876,6 @@ int main(int argc, const char **argv)
                if (output_file)
                {
                   int num, q;
-
-                  // Must do this before the encoder output port is enabled since
-                  // once enabled no further exif data is accepted
-                  add_exif_tags(&state);
 
                   // Same with raw, apparently need to set it for each capture, whilst port
                   // is not enabled
