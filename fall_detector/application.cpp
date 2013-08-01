@@ -1,8 +1,9 @@
 #include "application.h"
 
-#include <thread>
+#include <boost/thread.hpp>
 
 using namespace std;
+using namespace boost;
 
 namespace FallDetector
 {
@@ -38,7 +39,7 @@ namespace FallDetector
             char key;
 
             cin >> key;
-            
+
             switch (key)
             {
             case 'q':

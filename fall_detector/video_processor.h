@@ -1,8 +1,9 @@
 #ifndef FALL_DETECTOR_VIDEO_PROCESSOR_H
 #define FALL_DETECTOR_VIDEO_PROCESSOR_H
 
-#include <mutex>
-#include <atomic>
+
+#include <boost/thread/mutex.hpp>
+#include <boost/atomic.hpp>
 
 #include <opencv2/opencv.hpp>
 
@@ -96,7 +97,7 @@ namespace FallDetector
         /// <summary>
         /// Stop the processing
         /// </summary>
-        std::atomic<bool> m_stop;
+        boost::atomic<bool> m_stop;
 
         /// <summary>
         /// Height of bounding rectangle
@@ -106,7 +107,7 @@ namespace FallDetector
         /// <summary>
         /// Determine whether the user interface is shown
         /// </summary>
-        std::atomic<bool> m_showUI;
+        boost::atomic<bool> m_showUI;
 
         /// <summary>
         /// Determine whether windows of GUI were created
@@ -121,12 +122,12 @@ namespace FallDetector
         /// <summary>
         /// Protects video capture
         /// </summary>
-        std::mutex  m_mutexForVideoCapture;
+        boost::mutex  m_mutexForVideoCapture;
 
-        std::atomic<bool> mChangeResolution;
+        boost::atomic<bool> mChangeResolution;
         int mWidth;
         int mHeight;
     };
 }
 
-#endif // !FALL_DETECTOR_VIDEO_PROCESSOR_H
+#endif // FALL_DETECTOR_VIDEO_PROCESSOR_H

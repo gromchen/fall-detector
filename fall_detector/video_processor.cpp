@@ -1,9 +1,10 @@
 #include "video_processor.h"
 
-#include <chrono>
+#include <boost/chrono.hpp>
 
 using namespace std;
-using namespace std::chrono;
+using namespace boost;
+using namespace boost::chrono;
 using namespace cv;
 
 namespace FallDetector
@@ -66,10 +67,9 @@ namespace FallDetector
         vector<Vec4i> hierarchy;
         vector<vector<Point> > contours;
 
-
         while (!m_stop)
         {
-            auto timeOfProcessingStart = high_resolution_clock::now();
+            high_resolution_clock::time_point timeOfProcessingStart = high_resolution_clock::now();
 
             unique_lock<mutex> lockForVideoCapture(m_mutexForVideoCapture);
 
@@ -98,41 +98,42 @@ namespace FallDetector
             //dilate(foreground, foreground, Mat());
 
 
-            findContours(_frameWithForeground, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
-
-            unsigned int cmin = 100;
-            unsigned int cmax = 1000;
-
-            auto itc = contours.begin();
-            vector<Point> pts;
-            while (itc != contours.end())
-            {
-                if (itc->size() > cmin && itc->size() < cmax)
-                {
-                    for (auto pnt : *itc)
-                    {
-                        pts.push_back(pnt);
-                    }
-
-                    ++itc;
-                }
-                else
-                {
-                    ++itc;
-                }
-            }
-
-            if (pts.size() != 0)
-            {
-                Mat pointsMatrix = Mat(pts);
-                Scalar color(0, 255, 0);
-
-                Rect boundingRectangle = boundingRect(pointsMatrix);
-
-                _heightOfRectangle = boundingRectangle.height;
-
-                rectangle(_originalFrame, boundingRectangle, color, 2);
-            }
+//            findContours(_frameWithForeground, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
+//
+//            unsigned int cmin = 100;
+//            unsigned int cmax = 1000;
+//
+//            vector<vector<Point> >::const_iterator itc = contours.begin();
+//            vector<Point> pts;
+//            while (itc != contours.end())
+//            {
+//                if (itc->size() > cmin && itc->size() < cmax)
+//                {
+//                    vector<Point>::const_iterator pnt = (*itc).begin();
+//                    while (pnt != (*itc).end())
+//                    {
+//                        pts.push_back(*pnt);
+//                    }
+//
+//                    ++itc;
+//                }
+//                else
+//                {
+//                    ++itc;
+//                }
+//            }
+//
+//            if (pts.size() != 0)
+//            {
+//                Mat pointsMatrix = Mat(pts);
+//                Scalar color(0, 255, 0);
+//
+//                Rect boundingRectangle = boundingRect(pointsMatrix);
+//
+//                _heightOfRectangle = boundingRectangle.height;
+//
+//                rectangle(_originalFrame, boundingRectangle, color, 2);
+//            }
 
             /*bool showUI = false;
 
@@ -147,6 +148,7 @@ namespace FallDetector
             {
                 if(m_windowsAreCreated == false)
                 {
+                    startWindowThread();
                     namedWindow(m_nameOfInputWindow, CV_WINDOW_AUTOSIZE);
                     namedWindow(m_nameOfOutputWindow, CV_WINDOW_AUTOSIZE);
                     m_windowsAreCreated = true;
