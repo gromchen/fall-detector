@@ -128,3 +128,10 @@ Backup*/
 UpgradeLog*.XML
 /RemoteSystemsTempFiles/
 /.metadata/
+
+
+
+
+# Code::Blocks
+*.depend
+*.layout
