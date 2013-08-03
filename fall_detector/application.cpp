@@ -17,7 +17,7 @@ namespace FallDetector
 
     void Application::Run()
     {
-        thread processing(&VideoProcessor::Run, &m_videoProcessor);
+        thread processing(&VideoProcessor::Run, &(mVideoProcessor));
 
         handleMainCommands();
         cout << "Waiting video processing thread.." << endl;
@@ -43,11 +43,11 @@ namespace FallDetector
             switch (key)
             {
             case 'q':
-                m_videoProcessor.Stop();
+                mVideoProcessor.Stop();
                 stop = true;
                 break;
             case 'i':
-                m_videoProcessor.ShowHideGui();
+                mVideoProcessor.ShowHideGui();
                 break;
             case 'r':
                 handleResolution();
@@ -80,10 +80,10 @@ namespace FallDetector
             switch (key)
             {
             case '1':
-                m_videoProcessor.SetResolution(320, 240);
+                mVideoProcessor.SetResolution(320, 240);
                 break;
             case '2':
-                m_videoProcessor.SetResolution(640, 480);
+                mVideoProcessor.SetResolution(640, 480);
                 break;
             case 'q':
                 stop = true;

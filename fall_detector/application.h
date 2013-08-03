@@ -17,7 +17,7 @@ namespace FallDetector
         void handleMainCommands();
         void handleResolution();
 
-        VideoProcessor m_videoProcessor;
+        VideoProcessor mVideoProcessor;
     };
 }
 
