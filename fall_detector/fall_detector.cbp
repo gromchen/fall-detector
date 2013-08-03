@@ -54,13 +54,13 @@
 					<Add library="boost_thread-mgw47-mt-d-1_54" />
 					<Add library="boost_chrono-mgw47-d-1_54" />
 					<Add library="boost_system-mgw47-d-1_54" />
-					<Add library="opencv_highgui246" />
-					<Add library="opencv_core246" />
-					<Add library="opencv_features2d246" />
-					<Add library="opencv_calib3d246" />
-					<Add library="opencv_video246" />
-					<Add library="opencv_imgproc246" />
-					<Add directory="$(OPENCV_DIR)/x86/mingw/bin" />
+					<Add library="opencv_highgui246d" />
+					<Add library="opencv_core246d" />
+					<Add library="opencv_features2d246d" />
+					<Add library="opencv_calib3d246d" />
+					<Add library="opencv_video246d" />
+					<Add library="opencv_imgproc246d" />
+					<Add directory="$(OPENCV_DIR)/bin" />
 					<Add directory="$(BOOST_DIR)/lib" />
 				</Linker>
 			</Target>
