@@ -64,8 +64,8 @@ namespace FallDetector
         }
 
         BackgroundSubtractorMOG2 bg_subtractor(1000, 15);
-        vector<Vec4i> hierarchy;
-        vector<vector<Point> > contours;
+
+
 
         while (!m_stop)
         {
@@ -97,9 +97,27 @@ namespace FallDetector
             //erode(foreground, foreground, Mat());
             //dilate(foreground, foreground, Mat());
 
+            vector<vector<Point> > contours;
+            vector<Vec4i> hierarchy;
 
-//            findContours(_frameWithForeground, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
-//
+            findContours(_frameWithForeground, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
+
+            vector<RotatedRect> minEllipse(contours.size());
+
+            for(int i = 0; i < contours.size(); i++)
+            {
+                if(contours[i].size() > 5)
+                {
+                    minEllipse[i] = fitEllipse(Mat(contours[i]));
+                }
+            }
+
+            Scalar color(0, 255, 0);
+
+            for(int i = 0; i < contours.size(); i++)
+            {
+                ellipse(_originalFrame, minEllipse[i], color, 2, 8);
+            }
 //            unsigned int cmin = 100;
 //            unsigned int cmax = 1000;
 //
