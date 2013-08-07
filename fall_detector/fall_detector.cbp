@@ -97,6 +97,8 @@
 		</Compiler>
 		<Unit filename="application.cpp" />
 		<Unit filename="application.h" />
+		<Unit filename="background_subtractor_fd.cpp" />
+		<Unit filename="background_subtractor_fd.h" />
 		<Unit filename="main.cpp" />
 		<Unit filename="video_processor.cpp" />
 		<Unit filename="video_processor.h" />

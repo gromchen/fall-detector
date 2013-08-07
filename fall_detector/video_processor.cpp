@@ -2,6 +2,8 @@
 
 #include <boost/chrono.hpp>
 
+#include "background_subtractor_fd.h"
+
 using namespace std;
 using namespace boost;
 using namespace boost::chrono;
@@ -63,9 +65,7 @@ namespace FallDetector
             throw runtime_error("Video device is not opened.");
         }
 
-        BackgroundSubtractorMOG2 bg_subtractor(1000, 15);
-
-
+        BackgroundSubtractorFD bg_subtractor(21, 0.1);
 
         while (!m_stop)
         {
@@ -89,18 +89,24 @@ namespace FallDetector
                 throw runtime_error("Could not read new frame");
             }
 
-            cvtColor(_originalFrame, _grayFrame, CV_BGR2GRAY); // TODO: bilateral smoothing
-            //GaussianBlur(gray, blur, Size(5, 5), 0);
+            cvtColor(_originalFrame, _grayFrame, CV_BGR2GRAY);
+
+            //Mat bilateral_filter_output;
+
+            //blur(_grayFrame, bilateral_filter_output, Size(21, 21)); // NOTE: not big change
+            //medianBlur(_grayFrame, bilateral_filter_output, 41); // NOTE: not big change
+            //GaussianBlur(_grayFrame, bilateral_filter_output, Size(21, 21), 0); // NOTE: not big change
             //Canny(blur, canny, 10, hey);
 
-            bg_subtractor(_grayFrame, _frameWithForeground, 0.01);
+            bg_subtractor(_grayFrame, _frameWithForeground);
             //erode(foreground, foreground, Mat());
             //dilate(foreground, foreground, Mat());
 
             vector<vector<Point> > contours;
             vector<Vec4i> hierarchy;
 
-            findContours(_frameWithForeground, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
+            findContours(_frameWithForeground, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
+            // TODO: CV_RETR_TREE
 
             vector<RotatedRect> minEllipse(contours.size());
 
@@ -112,10 +118,20 @@ namespace FallDetector
                 }
             }
 
-            Scalar color(0, 255, 0);
-
             for(int i = 0; i < contours.size(); i++)
             {
+                Scalar color = Scalar(0, 255, 0);
+
+                if(hierarchy[i][3] == -1)
+                {
+                    color = Scalar(255, 0, 0);
+                }
+
+                if(hierarchy[i][2] == -1)
+                {
+                    color = Scalar(0, 0, 255);
+                }
+
                 ellipse(_originalFrame, minEllipse[i], color, 2, 8);
             }
 //            unsigned int cmin = 100;
@@ -153,28 +169,20 @@ namespace FallDetector
 //                rectangle(_originalFrame, boundingRectangle, color, 2);
 //            }
 
-            /*bool showUI = false;
-
-            unique_lock<mutex> lockForShowUI(m_mutexForShowUI);
-            if (m_showUI)
-            {
-            showUI = m_showUI;
-            }
-            lockForShowUI.unlock();*/
-
             if (m_showUI)
             {
                 if(m_windowsAreCreated == false)
                 {
                     startWindowThread();
                     namedWindow(m_nameOfInputWindow, CV_WINDOW_AUTOSIZE);
+                  //  namedWindow(mNameOfBlurredWindow, CV_WINDOW_AUTOSIZE);
                     namedWindow(m_nameOfOutputWindow, CV_WINDOW_AUTOSIZE);
                     m_windowsAreCreated = true;
                 }
 
                 imshow(m_nameOfInputWindow, _originalFrame);
                 //imshow(processed_video, gray);
-                //imshow(blurred_video, blur);
+                //imshow(mNameOfBlurredWindow, bilateral_filter_output);
                 //imshow(canny_video, canny);
                 imshow(m_nameOfOutputWindow, _frameWithForeground);
 
@@ -185,6 +193,7 @@ namespace FallDetector
                 if (m_windowsAreCreated)
                 {
                     destroyWindow(m_nameOfInputWindow);
+                    //destroyWindow(mNameOfBlurredWindow);
                     destroyWindow(m_nameOfOutputWindow);
                     m_windowsAreCreated = false;
                 }
