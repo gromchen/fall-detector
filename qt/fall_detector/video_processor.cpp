@@ -2,7 +2,7 @@
 
 #include <boost/chrono.hpp>
 
-#include "background_subtractor_fd.h"
+#include "mog2_public.h"
 
 using namespace std;
 using namespace boost;
@@ -67,6 +67,8 @@ namespace FallDetector
 
         BackgroundSubtractorMOG2 bg_subtractor;
 
+        //bg_subtractor.SetTau(0.01);
+
         while (!m_stop)
         {
             high_resolution_clock::time_point timeOfProcessingStart = high_resolution_clock::now();
@@ -103,8 +105,8 @@ namespace FallDetector
             Mat foreground_mask;
 
             bg_subtractor(frame, foreground_mask);
-            erode(foreground_mask, foreground_mask, Mat());
-            dilate(foreground_mask, foreground_mask, Mat());
+            erode(foreground_mask, foreground_mask, Mat(), Point(-1, -1), 3);
+            dilate(foreground_mask, foreground_mask, Mat(), Point(-1, -1), 3);
 
             vector<vector<Point> > contours;
             //vector<Vec4i> hierarchy;
@@ -112,6 +114,8 @@ namespace FallDetector
             //findContours(foreground_mask, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
             findContours(foreground_mask, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
             // TODO: CV_RETR_TREE
+
+            drawContours(frame, contours, -1, Scalar(0, 0, 255), 2);
 
             vector<RotatedRect> minEllipse(contours.size());
 
