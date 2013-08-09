@@ -27,7 +27,9 @@ namespace FallDetector
         cv::VideoCapture mVideoCapture;
 
         std::string m_nameOfInputWindow;
-        std::string mNameOfBlurredWindow;
+        std::string mForegroundMask;
+        std::string mErodeMask;
+        std::string mDilateMask;
         std::string m_nameOfOutputWindow;
 
         cv::Mat _grayFrame;

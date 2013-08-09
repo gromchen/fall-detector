@@ -2,7 +2,7 @@
 
 #include <boost/chrono.hpp>
 
-#include "background_subtractor_fd.h"
+//#include "mog2_public.h"
 
 using namespace std;
 using namespace boost;
@@ -30,7 +30,10 @@ namespace FallDetector
         mChangeResolution = false;
 
         m_nameOfInputWindow = "Original Video";
-        m_nameOfOutputWindow = "Output Video";
+        mForegroundMask = "Foreground Mask";
+        mErodeMask = "Erode Mask";
+        mDilateMask = "Dilate Mask";
+        m_nameOfOutputWindow = "Contours";
     }
 
     VideoProcessor::~VideoProcessor()
@@ -66,6 +69,8 @@ namespace FallDetector
         }
 
         BackgroundSubtractorMOG2 bg_subtractor;
+
+        //bg_subtractor.SetTau(0.01);
 
         while (!m_stop)
         {
@@ -103,15 +108,25 @@ namespace FallDetector
             Mat foreground_mask;
 
             bg_subtractor(frame, foreground_mask);
-            erode(foreground_mask, foreground_mask, Mat());
-            dilate(foreground_mask, foreground_mask, Mat());
+
+            Mat erode_mask;
+
+            erode(foreground_mask, erode_mask, Mat());
+
+            Mat dilate_mask;
+
+            dilate(erode_mask, dilate_mask, Mat());
 
             vector<vector<Point> > contours;
             //vector<Vec4i> hierarchy;
 
             //findContours(foreground_mask, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
-            findContours(foreground_mask, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
+            Mat mask_with_contours = dilate_mask;
+
+            findContours(mask_with_contours, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
             // TODO: CV_RETR_TREE
+
+            drawContours(frame, contours, -1, Scalar(0, 0, 255), 2);
 
             vector<RotatedRect> minEllipse(contours.size());
 
@@ -180,15 +195,19 @@ namespace FallDetector
                 {
                     startWindowThread();
                     namedWindow(m_nameOfInputWindow, CV_WINDOW_AUTOSIZE);
-                  //  namedWindow(mNameOfBlurredWindow, CV_WINDOW_AUTOSIZE);
+
+                    namedWindow(mForegroundMask, CV_WINDOW_AUTOSIZE);
+                    namedWindow(mErodeMask, CV_WINDOW_AUTOSIZE);
+                    namedWindow(mDilateMask, CV_WINDOW_AUTOSIZE);
+
                     namedWindow(m_nameOfOutputWindow, CV_WINDOW_AUTOSIZE);
                     m_windowsAreCreated = true;
                 }
 
                 imshow(m_nameOfInputWindow, frame);
-                //imshow(processed_video, gray);
-                //imshow(mNameOfBlurredWindow, bilateral_filter_output);
-                //imshow(canny_video, canny);
+                imshow(mForegroundMask, foreground_mask);
+                imshow(mErodeMask, erode_mask);
+                imshow(mDilateMask, dilate_mask);
                 imshow(m_nameOfOutputWindow, foreground_mask);
 
                 waitKey(30);
@@ -197,9 +216,7 @@ namespace FallDetector
             {
                 if (m_windowsAreCreated)
                 {
-                    destroyWindow(m_nameOfInputWindow);
-                    //destroyWindow(mNameOfBlurredWindow);
-                    destroyWindow(m_nameOfOutputWindow);
+                    destroyAllWindows();
                     m_windowsAreCreated = false;
                 }
             }
