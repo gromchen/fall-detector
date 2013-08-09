@@ -25,18 +25,37 @@ HEADERS += \
     video_processor.h \
     mog2_public.h
 
-INCLUDEPATH += $(OPENCV_DIR)\include \
-    $(BOOST_DIR)\include
+win32 {
+    INCLUDEPATH += $(OPENCV_DIR)\include \
+        $(BOOST_DIR)\include
 
-LIBS += -L$(OPENCV_DIR)\bin \
-    -lopencv_highgui246d \
-    -lopencv_core246d \
-    -lopencv_features2d246d \
-    -lopencv_calib3d246d \
-    -lopencv_video246d \
-    -lopencv_imgproc246d
+    LIBS += -L$(OPENCV_DIR)\bin \
+        -lopencv_highgui246d \
+        -lopencv_core246d \
+        -lopencv_features2d246d \
+        -lopencv_calib3d246d \
+        -lopencv_video246d \
+        -lopencv_imgproc246d
 
-LIBS += -L$(BOOST_DIR)\lib \
-    -lboost_thread-mgw47-mt-d-1_54 \
-    -lboost_chrono-mgw47-d-1_54 \
-    -lboost_system-mgw47-d-1_54
+    LIBS += -L$(BOOST_DIR)\lib \
+        -lboost_thread-mgw47-mt-d-1_54 \
+        -lboost_chrono-mgw47-d-1_54 \
+        -lboost_system-mgw47-d-1_54
+}
+
+unix {
+    INCLUDEPATH += /usr/local/include \
+        /usr/include
+
+    LIBS += -L/usr/lib \
+        -lopencv_highgui \
+        -lopencv_core \
+        -lopencv_features2d \
+        -lopencv_calib3d \
+        -lopencv_video \
+        -lopencv_imgproc
+
+    LIBS += -L/usr/local/lib \
+        -lboost_thread \
+        -lboost_chrono
+}
