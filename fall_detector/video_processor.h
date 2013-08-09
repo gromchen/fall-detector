@@ -1,52 +1,40 @@
 #ifndef FALL_DETECTOR_VIDEO_PROCESSOR_H
 #define FALL_DETECTOR_VIDEO_PROCESSOR_H
 
-#include <boost/thread/mutex.hpp>
-#include <boost/atomic.hpp>
-
 #include <opencv2/opencv.hpp>
 
 namespace FallDetector
 {
-    class VideoProcessor
-    {
-    public:
-        VideoProcessor();
-        ~VideoProcessor();
+class VideoProcessor
+{
+public:
+    VideoProcessor();
+    ~VideoProcessor();
 
-        void SetResolution(int width, int height);
-        void ShowHideGui();
-        int GetHeight(); // TODO: Obtain graph
-        void Run();
-        void Stop();
+    void RunWithoutGui();
+    void RunWithGui();
 
-    private:
-        void startDisplayUI();
-        void stopDisplayUI();
+    void SetResolution(int width, int height);
+    std::string PrintResolution();
 
-        cv::VideoCapture mVideoCapture;
+private:
+    void processFrame();
+    int log();
 
-        std::string m_nameOfInputWindow;
-        std::string mForegroundMask;
-        std::string mErodeMask;
-        std::string mDilateMask;
-        std::string m_nameOfOutputWindow;
+    cv::VideoCapture mVideoCapture;
+    cv::BackgroundSubtractorMOG2 mBackgroundSubtractor;
 
-        cv::Mat _grayFrame;
+    cv::Mat mOriginalFrame;
+    cv::Mat mForegroundMask;
+    cv::Mat mErodeMask;
+    cv::Mat mDilateMask;
+    cv::Mat mContoursMask;
 
-        boost::atomic<bool> m_stop;
-        boost::atomic<bool> m_showUI;
-        boost::atomic<bool> mChangeResolution;
-        boost::mutex  m_mutexForVideoCapture;
+    double mFps;
 
-        int _heightOfRectangle;
-
-        bool m_windowsAreCreated;
-        double _fps;
-
-        int mWidth;
-        int mHeight;
-    };
+    int mResolutionWidth;
+    int mResolutionHeight;
+};
 }
 
 #endif // FALL_DETECTOR_VIDEO_PROCESSOR_H

@@ -17,13 +17,11 @@ TEMPLATE = app
 
 SOURCES += main.cpp \
     application.cpp \
-    video_processor.cpp \
-    mog2_public.cpp
+    video_processor.cpp
 
 HEADERS += \
     application.h \
-    video_processor.h \
-    mog2_public.h
+    video_processor.h
 
 win32 {
     INCLUDEPATH += $(OPENCV_DIR)\include \

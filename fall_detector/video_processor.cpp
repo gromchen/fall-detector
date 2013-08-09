@@ -1,8 +1,7 @@
 #include "video_processor.h"
 
 #include <boost/chrono.hpp>
-
-//#include "mog2_public.h"
+#include <boost/thread/thread.hpp>
 
 using namespace std;
 using namespace boost;
@@ -11,222 +10,194 @@ using namespace cv;
 
 namespace FallDetector
 {
-    VideoProcessor::VideoProcessor()
+VideoProcessor::VideoProcessor()
+{
+    mResolutionWidth = 320;
+    mResolutionHeight = 240;
+}
+
+VideoProcessor::~VideoProcessor()
+{
+}
+
+void VideoProcessor::RunWithoutGui()
+{
+    try
     {
         if (!mVideoCapture.open(0))
-        {
             throw runtime_error("Could not open video device");
-        }
 
-        mVideoCapture.set(CV_CAP_PROP_FRAME_WIDTH, 640);
-        mVideoCapture.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
+        mVideoCapture.set(CV_CAP_PROP_FRAME_WIDTH, mResolutionWidth);
+        mVideoCapture.set(CV_CAP_PROP_FRAME_HEIGHT, mResolutionHeight);
 
-        //mVideoCapture.set(CV_CAP_PROP_FOCUS, 0);
-        //double focus = mVideoCapture.get(CV_CAP_PROP_FOCUS);
-
-        m_stop = false;
-        m_showUI = false;
-        m_windowsAreCreated = false;
-        mChangeResolution = false;
-
-        m_nameOfInputWindow = "Original Video";
-        mForegroundMask = "Foreground Mask";
-        mErodeMask = "Erode Mask";
-        mDilateMask = "Dilate Mask";
-        m_nameOfOutputWindow = "Contours";
-    }
-
-    VideoProcessor::~VideoProcessor()
-    {
-    }
-
-    void VideoProcessor::SetResolution(int width, int height)
-    {
-        unique_lock<mutex> lockForVideoCapture(m_mutexForVideoCapture);
-        mChangeResolution = true;
-        mWidth = width;
-        mHeight = height;
-        lockForVideoCapture.unlock();
-    }
-
-    void VideoProcessor::ShowHideGui()
-    {
-        //unique_lock<mutex> lockForShowUI(m_mutexForShowUI);
-        m_showUI = !m_showUI;
-        //lockForShowUI.unlock();
-    }
-
-    int VideoProcessor::GetHeight()
-    {
-        return _heightOfRectangle;
-    }
-
-    void VideoProcessor::Run()
-    {
-        if (!mVideoCapture.isOpened())
+        while (true)
         {
-            throw runtime_error("Video device is not opened.");
-        }
+            this_thread::interruption_point();
+            high_resolution_clock::time_point start_time = high_resolution_clock::now();
 
-        BackgroundSubtractorMOG2 bg_subtractor;
-
-        //bg_subtractor.SetTau(0.01);
-
-        while (!m_stop)
-        {
-            high_resolution_clock::time_point timeOfProcessingStart = high_resolution_clock::now();
-
-            Mat frame;
-
-            unique_lock<mutex> lockForVideoCapture(m_mutexForVideoCapture);
-
-            if(mChangeResolution)
-            {
-                mVideoCapture.set(CV_CAP_PROP_FRAME_WIDTH, mWidth);
-                mVideoCapture.set(CV_CAP_PROP_FRAME_HEIGHT, mHeight);
-                mChangeResolution = false;
-            }
-
-            bool frameIsRead = mVideoCapture.read(frame);
-
-            lockForVideoCapture.unlock();
-
-            if (!frameIsRead)
-            {
+            if (!mVideoCapture.read(mOriginalFrame))
                 throw runtime_error("Could not read new frame");
-            }
 
-            cvtColor(frame, _grayFrame, CV_BGR2GRAY);
-
-            //Mat bilateral_filter_output;
-
-            //blur(_grayFrame, bilateral_filter_output, Size(21, 21)); // NOTE: not big change
-            //medianBlur(_grayFrame, bilateral_filter_output, 41); // NOTE: not big change
-            //GaussianBlur(_grayFrame, bilateral_filter_output, Size(21, 21), 0); // NOTE: not big change
-            //Canny(blur, canny, 10, hey);
-
-            Mat foreground_mask;
-
-            bg_subtractor(frame, foreground_mask);
-
-            Mat erode_mask;
-
-            erode(foreground_mask, erode_mask, Mat());
-
-            Mat dilate_mask;
-
-            dilate(erode_mask, dilate_mask, Mat());
-
-            vector<vector<Point> > contours;
-            //vector<Vec4i> hierarchy;
-
-            //findContours(foreground_mask, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
-            Mat mask_with_contours = dilate_mask;
-
-            findContours(mask_with_contours, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
-            // TODO: CV_RETR_TREE
-
-            drawContours(frame, contours, -1, Scalar(0, 0, 255), 2);
-
-            vector<RotatedRect> minEllipse(contours.size());
-
-            for(int i = 0; i < contours.size(); i++)
-            {
-                if(contours[i].size() > 5)
-                {
-                    minEllipse[i] = fitEllipse(Mat(contours[i]));
-                }
-            }
-
-            for(int i = 0; i < contours.size(); i++)
-            {
-                Scalar color = Scalar(0, 255, 0);
-
-//                if(hierarchy[i][3] == -1)
-//                {
-//                    color = Scalar(255, 0, 0);
-//                }
-//
-//                if(hierarchy[i][2] == -1)
-//                {
-//                    color = Scalar(0, 0, 255);
-//                }
-
-                ellipse(frame, minEllipse[i], color, 2, 8);
-            }
-//            unsigned int cmin = 100;
-//            unsigned int cmax = 1000;
-//
-//            vector<vector<Point> >::const_iterator itc = contours.begin();
-//            vector<Point> pts;
-//            while (itc != contours.end())
-//            {
-//                if (itc->size() > cmin && itc->size() < cmax)
-//                {
-//                    vector<Point>::const_iterator pnt = (*itc).begin();
-//                    while (pnt != (*itc).end())
-//                    {
-//                        pts.push_back(*pnt);
-//                    }
-//
-//                    ++itc;
-//                }
-//                else
-//                {
-//                    ++itc;
-//                }
-//            }
-//
-//            if (pts.size() != 0)
-//            {
-//                Mat pointsMatrix = Mat(pts);
-//                Scalar color(0, 255, 0);
-//
-//                Rect boundingRectangle = boundingRect(pointsMatrix);
-//
-//                _heightOfRectangle = boundingRectangle.height;
-//
-//                rectangle(_originalFrame, boundingRectangle, color, 2);
-//            }
-
-            if (m_showUI)
-            {
-                if(m_windowsAreCreated == false)
-                {
-                    startWindowThread();
-                    namedWindow(m_nameOfInputWindow, CV_WINDOW_AUTOSIZE);
-
-                    namedWindow(mForegroundMask, CV_WINDOW_AUTOSIZE);
-                    namedWindow(mErodeMask, CV_WINDOW_AUTOSIZE);
-                    namedWindow(mDilateMask, CV_WINDOW_AUTOSIZE);
-
-                    namedWindow(m_nameOfOutputWindow, CV_WINDOW_AUTOSIZE);
-                    m_windowsAreCreated = true;
-                }
-
-                imshow(m_nameOfInputWindow, frame);
-                imshow(mForegroundMask, foreground_mask);
-                imshow(mErodeMask, erode_mask);
-                imshow(mDilateMask, dilate_mask);
-                imshow(m_nameOfOutputWindow, foreground_mask);
-
-                waitKey(30);
-            }
-            else
-            {
-                if (m_windowsAreCreated)
-                {
-                    destroyAllWindows();
-                    m_windowsAreCreated = false;
-                }
-            }
-
-            _fps = 1000.0 / duration_cast<milliseconds>(high_resolution_clock::now() - timeOfProcessingStart).count();
+            processFrame();
+            mFps = 1000.0 / duration_cast<milliseconds>(
+                        high_resolution_clock::now() - start_time).count();
         }
     }
-
-    void VideoProcessor::Stop()
+    catch(thread_interrupted&)
     {
-        m_stop = true;
+        if(mVideoCapture.isOpened())
+            mVideoCapture.release();
     }
+}
+
+void VideoProcessor::RunWithGui()
+{
+    try
+    {
+        if (!mVideoCapture.open(0))
+            throw runtime_error("Could not open video device");
+
+        mVideoCapture.set(CV_CAP_PROP_FRAME_WIDTH, mResolutionWidth);
+        mVideoCapture.set(CV_CAP_PROP_FRAME_HEIGHT, mResolutionHeight);
+
+        string name_original_frame = "Original Frame";
+        string name_foreground_mask = "Foreground Mask";
+        string name_erode_mask = "Erode Mask";
+        string name_dilate_mask = "Dilate Mask";
+        string name_contours_mask = "Contours Mask";
+
+        startWindowThread();
+
+        namedWindow(name_original_frame, CV_WINDOW_AUTOSIZE);
+        namedWindow(name_foreground_mask, CV_WINDOW_AUTOSIZE);
+        namedWindow(name_erode_mask, CV_WINDOW_AUTOSIZE);
+        namedWindow(name_dilate_mask, CV_WINDOW_AUTOSIZE);
+        namedWindow(name_contours_mask, CV_WINDOW_AUTOSIZE);
+
+        while (true)
+        {
+            this_thread::interruption_point();
+            high_resolution_clock::time_point start_time = high_resolution_clock::now();
+
+            if (!mVideoCapture.read(mOriginalFrame))
+                throw runtime_error("Could not read new frame");
+
+            processFrame();
+
+            imshow(name_original_frame, mOriginalFrame);
+            imshow(name_foreground_mask, mForegroundMask);
+            imshow(name_erode_mask, mErodeMask);
+            imshow(name_dilate_mask, mDilateMask);
+            imshow(name_contours_mask, mContoursMask);
+
+            waitKey(30);
+
+            mFps = 1000.0 / duration_cast<milliseconds>(
+                        high_resolution_clock::now() - start_time).count();
+        }
+    }
+    catch(thread_interrupted&)
+    {
+        if(mVideoCapture.isOpened())
+            mVideoCapture.release();
+
+        destroyAllWindows();
+    }
+}
+
+void VideoProcessor::SetResolution(int width, int height)
+{
+    mResolutionWidth = width;
+    mResolutionHeight = height;
+}
+
+std::string VideoProcessor::PrintResolution()
+{
+    return to_string(mResolutionWidth) + "x" + to_string(mResolutionHeight);
+}
+
+void VideoProcessor::processFrame()
+{
+    //cvtColor(frame, _grayFrame, CV_BGR2GRAY);
+
+    //Mat bilateral_filter_output;
+    //blur(_grayFrame, bilateral_filter_output, Size(21, 21)); // NOTE: not big change
+    //medianBlur(_grayFrame, bilateral_filter_output, 41); // NOTE: not big change
+    //GaussianBlur(_grayFrame, bilateral_filter_output, Size(21, 21), 0); // NOTE: not big change
+
+    //Canny(blur, canny, 10, hey);
+
+    mBackgroundSubtractor(mOriginalFrame, mForegroundMask);
+
+    erode(mForegroundMask, mErodeMask, Mat());
+    dilate(mErodeMask, mDilateMask, Mat());
+
+    //vector<Vec4i> hierarchy;
+    //findContours(foreground_mask, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
+
+    mContoursMask = mDilateMask; // TODO: Bad copy
+    vector<vector<Point> > contours;
+    findContours(mContoursMask, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
+    // TODO: CV_RETR_TREE
+
+    drawContours(mOriginalFrame, contours, -1, Scalar(0, 0, 255), 2);
+
+    vector<RotatedRect> minEllipse(contours.size());
+
+    for(unsigned int i = 0; i < contours.size(); i++)
+        if(contours[i].size() > 5)
+            minEllipse[i] = fitEllipse(Mat(contours[i]));
+
+    for(unsigned int i = 0; i < contours.size(); i++)
+    {
+        Scalar color = Scalar(0, 255, 0);
+
+        //                if(hierarchy[i][3] == -1)
+        //                {
+        //                    color = Scalar(255, 0, 0);
+        //                }
+        //
+        //                if(hierarchy[i][2] == -1)
+        //                {
+        //                    color = Scalar(0, 0, 255);
+        //                }
+
+        ellipse(mOriginalFrame, minEllipse[i], color, 2, 8);
+    }
+
+    //            unsigned int cmin = 100;
+    //            unsigned int cmax = 1000;
+    //
+    //            vector<vector<Point> >::const_iterator itc = contours.begin();
+    //            vector<Point> pts;
+    //            while (itc != contours.end())
+    //            {
+    //                if (itc->size() > cmin && itc->size() < cmax)
+    //                {
+    //                    vector<Point>::const_iterator pnt = (*itc).begin();
+    //                    while (pnt != (*itc).end())
+    //                    {
+    //                        pts.push_back(*pnt);
+    //                    }
+    //
+    //                    ++itc;
+    //                }
+    //                else
+    //                {
+    //                    ++itc;
+    //                }
+    //            }
+    //
+    //            if (pts.size() != 0)
+    //            {
+    //                Mat pointsMatrix = Mat(pts);
+    //                Scalar color(0, 255, 0);
+    //
+    //                Rect boundingRectangle = boundingRect(pointsMatrix);
+    //
+    //                _heightOfRectangle = boundingRectangle.height;
+    //
+    //                rectangle(_originalFrame, boundingRectangle, color, 2);
+    //            }
+}
 }
