@@ -11,6 +11,7 @@ using namespace cv;
 namespace FallDetector
 {
 VideoProcessor::VideoProcessor()
+    //: mBackgroundSubtractor(16, 16, true)
 {
     mResolutionWidth = 320;
     mResolutionHeight = 240;
@@ -70,8 +71,8 @@ void VideoProcessor::RunWithGui()
 
         namedWindow(name_original_frame, CV_WINDOW_AUTOSIZE);
         namedWindow(name_foreground_mask, CV_WINDOW_AUTOSIZE);
-        namedWindow(name_erode_mask, CV_WINDOW_AUTOSIZE);
         namedWindow(name_dilate_mask, CV_WINDOW_AUTOSIZE);
+        namedWindow(name_erode_mask, CV_WINDOW_AUTOSIZE);
         namedWindow(name_contours_mask, CV_WINDOW_AUTOSIZE);
 
         while (true)
@@ -86,8 +87,8 @@ void VideoProcessor::RunWithGui()
 
             imshow(name_original_frame, mOriginalFrame);
             imshow(name_foreground_mask, mForegroundMask);
-            imshow(name_erode_mask, mErodeMask);
             imshow(name_dilate_mask, mDilateMask);
+            imshow(name_erode_mask, mErodeMask);
             imshow(name_contours_mask, mContoursMask);
 
             waitKey(30);
@@ -129,15 +130,17 @@ void VideoProcessor::processFrame()
 
     mBackgroundSubtractor(mOriginalFrame, mForegroundMask);
 
-    erode(mForegroundMask, mErodeMask, Mat());
+    threshold(mForegroundMask, mThresholdMask, 127, 255, THRESH_BINARY);
+
+    erode(mThresholdMask, mErodeMask, Mat());
     dilate(mErodeMask, mDilateMask, Mat());
 
     //vector<Vec4i> hierarchy;
     //findContours(foreground_mask, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
 
-    mContoursMask = mDilateMask; // TODO: Bad copy
+    mDilateMask.copyTo(mContoursMask);
     vector<vector<Point> > contours;
-    findContours(mContoursMask, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
+    findContours(mContoursMask, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
     // TODO: CV_RETR_TREE
 
     drawContours(mOriginalFrame, contours, -1, Scalar(0, 0, 255), 2);
@@ -148,9 +151,11 @@ void VideoProcessor::processFrame()
         if(contours[i].size() > 5)
             minEllipse[i] = fitEllipse(Mat(contours[i]));
 
+    Scalar color = Scalar(0, 255, 0);
+
     for(unsigned int i = 0; i < contours.size(); i++)
     {
-        Scalar color = Scalar(0, 255, 0);
+
 
         //                if(hierarchy[i][3] == -1)
         //                {
