@@ -63,16 +63,18 @@ void VideoProcessor::RunWithGui()
 
         string name_original_frame = "Original Frame";
         string name_foreground_mask = "Foreground Mask";
-        string name_erode_mask = "Erode Mask";
-        string name_dilate_mask = "Dilate Mask";
+        string name_morphological_mask = "Morphological Mask";
+        //string name_erode_mask = "Erode Mask";
+        //string name_dilate_mask = "Dilate Mask";
         string name_contours_mask = "Contours Mask";
 
         startWindowThread();
 
         namedWindow(name_original_frame, CV_WINDOW_AUTOSIZE);
         namedWindow(name_foreground_mask, CV_WINDOW_AUTOSIZE);
-        namedWindow(name_dilate_mask, CV_WINDOW_AUTOSIZE);
-        namedWindow(name_erode_mask, CV_WINDOW_AUTOSIZE);
+        namedWindow(name_morphological_mask, CV_WINDOW_AUTOSIZE);
+        //namedWindow(name_dilate_mask, CV_WINDOW_AUTOSIZE);
+        //namedWindow(name_erode_mask, CV_WINDOW_AUTOSIZE);
         namedWindow(name_contours_mask, CV_WINDOW_AUTOSIZE);
 
         while (true)
@@ -87,8 +89,9 @@ void VideoProcessor::RunWithGui()
 
             imshow(name_original_frame, mOriginalFrame);
             imshow(name_foreground_mask, mForegroundMask);
-            imshow(name_dilate_mask, mDilateMask);
-            imshow(name_erode_mask, mErodeMask);
+            imshow(name_morphological_mask, mMorphologicalMask);
+            //imshow(name_dilate_mask, mDilateMask);
+            //imshow(name_erode_mask, mErodeMask);
             imshow(name_contours_mask, mContoursMask);
 
             waitKey(30);
@@ -129,16 +132,19 @@ void VideoProcessor::processFrame()
     //Canny(blur, canny, 10, hey);
 
     mBackgroundSubtractor(mOriginalFrame, mForegroundMask);
-
     threshold(mForegroundMask, mThresholdMask, 127, 255, THRESH_BINARY);
 
-    erode(mThresholdMask, mErodeMask, Mat());
-    dilate(mErodeMask, mDilateMask, Mat());
+    Mat element = getStructuringElement(MORPH_ELLIPSE, Size(4, 4));
+
+    morphologyEx(mThresholdMask, mMorphologicalMask, MORPH_OPEN, element, Point(-1, -1), 3);
+
+    //erode(mThresholdMask, mErodeMask, Mat());
+    //dilate(mErodeMask, mDilateMask, Mat());
 
     //vector<Vec4i> hierarchy;
     //findContours(foreground_mask, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
 
-    mDilateMask.copyTo(mContoursMask);
+    mMorphologicalMask.copyTo(mContoursMask);
     vector<vector<Point> > contours;
     findContours(mContoursMask, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
     // TODO: CV_RETR_TREE

@@ -27,8 +27,9 @@ private:
     cv::Mat mOriginalFrame;
     cv::Mat mForegroundMask;
     cv::Mat mThresholdMask;
-    cv::Mat mErodeMask;
-    cv::Mat mDilateMask;
+    cv::Mat mMorphologicalMask;
+    //cv::Mat mErodeMask;
+    //cv::Mat mDilateMask;
     cv::Mat mContoursMask;
 
     double mFps;
