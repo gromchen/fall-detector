@@ -33,7 +33,7 @@ void Application::Run()
 
         if(mIsRunning)
         {
-            cout << "c - Stop processing" << endl
+            cout << "s - Stop processing" << endl
                  << "q - Quit" << endl
                  << ">>";
             char key;
@@ -41,7 +41,7 @@ void Application::Run()
 
             switch (key)
             {
-            case 'c':
+            case 's':
                 mpProcessing->interrupt();
                 cout << "Waiting video processing thread.." << endl;
                 mpProcessing->join();
@@ -64,9 +64,9 @@ void Application::Run()
         else
         {
             cout << "s - Start processing" << endl
-                 << "i - Show/hide GUI" << endl
+                 << "g - Show/hide GUI" << endl
                  << "r - Change resolution" << endl
-                 << "h - Create new backgound subtractor" << endl
+                 << "b - Create new backgound subtractor" << endl
                  << "q - Quit" << endl
                  << ">>";
 
@@ -85,16 +85,16 @@ void Application::Run()
 
                 mIsRunning = true;
                 break;
-            case 'i':
+            case 'g':
                 mShowGui = !mShowGui;
                 break;
             case 'r':
                 handleResolution();
                 break;
-            case 'h':
+            case 'b':
                 cout << "Input history: ";
                 cin >> history;
-                cout << "Input threshold";
+                cout << "Input threshold: ";
                 cin >> threshold;
                 mVideoProcessor.CreateNewBackgroundSubtractor(history, threshold);
                 break;

@@ -47,6 +47,8 @@ private:
     cv::Mat mDilateMask;
     cv::Mat mContoursMask;
 
+    int mErodeElementSize;
+    int mErodeIterations;
     int mDilateElementSize;
     int mDilateIterations;
 

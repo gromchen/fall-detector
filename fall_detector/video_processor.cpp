@@ -18,6 +18,8 @@ VideoProcessor::VideoProcessor()
     mResolutionWidth = 320;
     mResolutionHeight = 240;
 
+    mErodeElementSize = 3;
+    mErodeIterations = 2;
     mDilateElementSize = 8;
     mDilateIterations = 2;
 
@@ -89,6 +91,8 @@ void VideoProcessor::RunWithGui()
         namedWindow(name_erode_mask, CV_WINDOW_AUTOSIZE);
         namedWindow(name_contours_mask, CV_WINDOW_AUTOSIZE);
 
+        createTrackbar("Erode element size", name_erode_mask, &mErodeElementSize, 50);
+        createTrackbar("Erode iterations", name_erode_mask, &mErodeIterations, 50);
         createTrackbar("Dilate element size", name_dilate_mask, &mDilateElementSize, 50);
         createTrackbar("Dilate iterations", name_dilate_mask, &mDilateIterations, 50);
 
@@ -171,8 +175,8 @@ void VideoProcessor::processFrame()
     (*mpBackgroundSubtractor)(mOriginalFrame, mForegroundMask);
     threshold(mForegroundMask, mThresholdMask, 127, 255, THRESH_BINARY);
 
-    Mat erode_element = getStructuringElement(MORPH_ELLIPSE, Size(3, 3));
-    erode(mThresholdMask, mErodeMask, erode_element, Point(-1, -1), 2);
+    Mat erode_element = getStructuringElement(MORPH_ELLIPSE, Size(mErodeElementSize, mErodeElementSize));
+    erode(mThresholdMask, mErodeMask, erode_element, Point(-1, -1), mErodeIterations);
 
     Mat dilate_element = getStructuringElement(MORPH_ELLIPSE, Size(mDilateElementSize, mDilateElementSize));
     dilate(mErodeMask, mDilateMask, dilate_element, Point(-1, -1), mDilateIterations);
@@ -189,7 +193,7 @@ void VideoProcessor::processFrame()
     mEllipses.clear();
 
     for(unsigned int iContour = 0; iContour < contours.size(); iContour++)
-        //if(contours[iContour].size() > 5)
+        if(contours[iContour].size() > 5)
             mEllipses.push_back(fitEllipse(Mat(contours[iContour])));
 
     Scalar color = Scalar(0, 255, 0);
