@@ -18,12 +18,14 @@ TEMPLATE = app
 SOURCES += main.cpp \
     application.cpp \
     video_processor.cpp \
-    helpers.cpp
+    helpers.cpp \
+    video_data.cpp
 
 HEADERS += \
     application.h \
     video_processor.h \
-    helpers.h
+    helpers.h \
+    video_data.h
 
 win32 {
     INCLUDEPATH += $(OPENCV_DIR)\include \

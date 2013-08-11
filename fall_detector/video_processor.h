@@ -6,6 +6,7 @@
 #include <opencv2/opencv.hpp>
 
 #include "helpers.h"
+#include "video_data.h"
 
 namespace FallDetector
 {
@@ -26,8 +27,9 @@ public:
 
 private:
     void processFrame();
-    void log(std::string fileName, std::vector<VideoData> data);
+    void collectData();
     void clearStop();
+    void log(std::string fileName, std::vector<VideoData> data);
 
     cv::VideoCapture mVideoCapture;
 
@@ -53,6 +55,7 @@ private:
 
     std::vector<boost::thread*> mWriteProcesses;
     boost::mutex mFileMutex;
+    std::vector<cv::RotatedRect> mEllipses;
     std::vector<VideoData> mVideoDataCollection;
 };
 }

@@ -54,6 +54,7 @@ void VideoProcessor::RunWithoutGui()
             processFrame();
             mFps = 1000.0 / duration_cast<milliseconds>(
                         high_resolution_clock::now() - start_time).count();
+            collectData();
         }
     }
     catch(thread_interrupted&)
@@ -116,6 +117,7 @@ void VideoProcessor::RunWithGui()
 
             mFps = 1000.0 / duration_cast<milliseconds>(
                         high_resolution_clock::now() - start_time).count();
+            collectData();
         }
     }
     catch(thread_interrupted&)
@@ -178,12 +180,11 @@ void VideoProcessor::processFrame()
     // TODO: CV_RETR_TREE
 
     drawContours(mOriginalFrame, contours, -1, Scalar(0, 0, 255), 2);
-
-    vector<RotatedRect> min_ellipses(contours.size());
+    mEllipses.clear();
 
     for(unsigned int iContour = 0; iContour < contours.size(); iContour++)
         if(contours[iContour].size() > 5)
-            min_ellipses[iContour] = fitEllipse(Mat(contours[iContour]));
+            mEllipses.push_back(fitEllipse(Mat(contours[iContour])));
 
     Scalar color = Scalar(0, 255, 0);
 
@@ -200,28 +201,9 @@ void VideoProcessor::processFrame()
         //                    color = Scalar(0, 0, 255);
         //                }
         */
-        ellipse(mOriginalFrame, min_ellipses[iContour], color, 2, 8);
+        ellipse(mOriginalFrame, mEllipses[iContour], color, 2, 8);
     }
-
-    if(mVideoDataCollection.size() < 10)
-    {
-        if(min_ellipses.size() != 0)
-        {
-            VideoData video_data;
-            video_data.mCurrentTime = boost::posix_time::microsec_clock::local_time();
-            video_data.mEllipseHeight = min_ellipses[0].size.height;
-            mVideoDataCollection.push_back(video_data);
-        }
-    }
-    else
-    {
-        stringstream ss;
-        ss << boost::posix_time::second_clock::local_time().date();
-        mWriteProcesses.push_back(new thread(&VideoProcessor::log, this,
-                                             "data(" + ss.str() + ").csv", mVideoDataCollection));
-        mVideoDataCollection.clear();
-    }
-        /*
+    /*
     //            unsigned int cmin = 100;
     //            unsigned int cmax = 1000;
     //
@@ -259,20 +241,27 @@ void VideoProcessor::processFrame()
     */
 }
 
-void VideoProcessor::log(string fileName, vector<VideoData> data)
+void VideoProcessor::collectData()
 {
-    ofstream out_file;
-    mFileMutex.lock();
-    out_file.open(fileName.c_str(), ios_base::app);
-
-    for(unsigned int iData = 0; iData < data.size(); iData++)
+    if(mVideoDataCollection.size() < 10)
     {
-        out_file << data[iData].mCurrentTime.time_of_day() << ","
-                 << data[iData].mEllipseHeight << endl;
+        if(mEllipses.size() != 0)
+        {
+            VideoData video_data(
+                        boost::posix_time::microsec_clock::local_time(),
+                        mFps,
+                        mEllipses[0].size.height);
+            mVideoDataCollection.push_back(video_data);
+        }
     }
-
-    out_file.close();
-    mFileMutex.unlock();
+    else
+    {
+        stringstream ss;
+        ss << boost::posix_time::second_clock::local_time().date();
+        mWriteProcesses.push_back(new thread(&VideoProcessor::log, this,
+                                             "data(" + ss.str() + ").csv", mVideoDataCollection));
+        mVideoDataCollection.clear();
+    }
 }
 
 void VideoProcessor::clearStop()
@@ -287,5 +276,22 @@ void VideoProcessor::clearStop()
     }
 
     mWriteProcesses.clear();
+}
+
+void VideoProcessor::log(string fileName, vector<VideoData> data)
+{
+    ofstream out_file;
+    mFileMutex.lock();
+    out_file.open(fileName.c_str(), ios_base::app);
+
+    for(unsigned int iData = 0; iData < data.size(); iData++)
+    {
+        out_file << data[iData].mCurrentTime.time_of_day() << ","
+                 << data[iData].mFps << ","
+                 << data[iData].mEllipseHeight << endl;
+    }
+
+    out_file.close();
+    mFileMutex.unlock();
 }
 }
