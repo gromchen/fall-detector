@@ -21,11 +21,11 @@ VideoProcessor::VideoProcessor()
     mDilateElementSize = 8;
     mDilateIterations = 2;
 
-    mHistory = 250;
-    //mThreshold = 0;
+    mHistory = 500;
+    mThreshold = 16;
     //mThresholdGen = 0;
 
-    mpBackgroundSubtractor = new BackgroundSubtractorMOG2(mHistory, 16);
+    mpBackgroundSubtractor = new BackgroundSubtractorMOG2(mHistory, mThreshold);
 }
 
 VideoProcessor::~VideoProcessor()
@@ -138,16 +138,22 @@ std::string VideoProcessor::PrintResolution()
     return IntToString(mResolutionWidth) + "x" + IntToString(mResolutionHeight);
 }
 
-void VideoProcessor::CreateNewBackgroundSubtractor(int history)
+void VideoProcessor::CreateNewBackgroundSubtractor(int history, float threashold)
 {
     mHistory = history;
+    mThreshold = threashold;
     delete mpBackgroundSubtractor;
-    mpBackgroundSubtractor = new BackgroundSubtractorMOG2(mHistory, 16);
+    mpBackgroundSubtractor = new BackgroundSubtractorMOG2(mHistory, mThreshold);
 }
 
 int VideoProcessor::GetHistory()
 {
     return mHistory;
+}
+
+float VideoProcessor::GetThreshold()
+{
+    return mThreshold;
 }
 
 void VideoProcessor::processFrame()
@@ -183,7 +189,7 @@ void VideoProcessor::processFrame()
     mEllipses.clear();
 
     for(unsigned int iContour = 0; iContour < contours.size(); iContour++)
-        if(contours[iContour].size() > 5)
+        //if(contours[iContour].size() > 5)
             mEllipses.push_back(fitEllipse(Mat(contours[iContour])));
 
     Scalar color = Scalar(0, 255, 0);
@@ -243,7 +249,7 @@ void VideoProcessor::processFrame()
 
 void VideoProcessor::collectData()
 {
-    if(mVideoDataCollection.size() < 10)
+    if(mVideoDataCollection.size() < 100)
     {
         if(mEllipses.size() != 0)
         {
@@ -255,19 +261,25 @@ void VideoProcessor::collectData()
         }
     }
     else
-    {
-        stringstream ss;
-        ss << boost::posix_time::second_clock::local_time().date();
-        mWriteProcesses.push_back(new thread(&VideoProcessor::log, this,
-                                             "data(" + ss.str() + ").csv", mVideoDataCollection));
-        mVideoDataCollection.clear();
-    }
+        writeToFile();
+}
+
+void VideoProcessor::writeToFile()
+{
+    stringstream ss;
+    ss << boost::posix_time::second_clock::local_time().date();
+    mWriteProcesses.push_back(new thread(&VideoProcessor::log, this,
+                                         "data(" + ss.str() + ").csv", mVideoDataCollection));
+    mVideoDataCollection.clear();
 }
 
 void VideoProcessor::clearStop()
 {
     if(mVideoCapture.isOpened())
         mVideoCapture.release();
+
+    if(mVideoDataCollection.size() != 0)
+        writeToFile();
 
     for(unsigned int iProcesses = 0; iProcesses < mWriteProcesses.size(); iProcesses++)
     {

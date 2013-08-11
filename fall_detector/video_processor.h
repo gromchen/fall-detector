@@ -22,12 +22,14 @@ public:
     void SetResolution(int width, int height);
     std::string PrintResolution();
 
-    void CreateNewBackgroundSubtractor(int history);
+    void CreateNewBackgroundSubtractor(int history, float threashold);
     int GetHistory();
+    float GetThreshold();
 
 private:
     void processFrame();
     void collectData();
+    void writeToFile();
     void clearStop();
     void log(std::string fileName, std::vector<VideoData> data);
 
@@ -35,7 +37,7 @@ private:
 
     cv::BackgroundSubtractorMOG2* mpBackgroundSubtractor;
     int mHistory;
-    //int mThreshold;
+    float mThreshold;
     //int mThresholdGen;
 
     cv::Mat mOriginalFrame;

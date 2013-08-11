@@ -23,30 +23,24 @@ void Application::Run()
 
     while (!stop)
     {
-        cout << "Running: " << mIsRunning << "; "
-             << "Camera resolution: " << mVideoProcessor.PrintResolution() << "; "
-             << "Show GUI: " << mShowGui << "; "
-             << "History: " << mVideoProcessor.GetHistory() << endl
-             << "Available commands:" << endl
-             << "s - Start processing" << endl
-             << "c - Stop processing" << endl
-             << "i - Show/hide GUI" << endl
-             << "r - Change resolution" << endl
-             << "q - Quit" << endl
-             << ">>";
-        char key;
-        cin >> key;
+        cout << "Running:\t\t" << mIsRunning << endl
+             << "Camera resolution:\t" << mVideoProcessor.PrintResolution() << endl
+             << "Show GUI:\t\t" << mShowGui << endl
+             << "History:\t\t" << mVideoProcessor.GetHistory() << endl
+             << "Threshold:\t\t" << mVideoProcessor.GetThreshold() << endl
+             << "===================" << endl
+             << "Available commands:" << endl;
 
         if(mIsRunning)
         {
+            cout << "c - Stop processing" << endl
+                 << "q - Quit" << endl
+                 << ">>";
+            char key;
+            cin >> key;
+
             switch (key)
             {
-            case 's':
-            case 'i':
-            case 'r':
-            case 'h':
-                cout << "Processing is running, try to stop first" << endl;
-                break;
             case 'c':
                 mpProcessing->interrupt();
                 cout << "Waiting video processing thread.." << endl;
@@ -69,7 +63,17 @@ void Application::Run()
         }
         else
         {
+            cout << "s - Start processing" << endl
+                 << "i - Show/hide GUI" << endl
+                 << "r - Change resolution" << endl
+                 << "h - Create new backgound subtractor" << endl
+                 << "q - Quit" << endl
+                 << ">>";
+
             int history = 0;
+            float threshold = 0;
+            char key;
+            cin >> key;
 
             switch (key)
             {
@@ -81,18 +85,18 @@ void Application::Run()
 
                 mIsRunning = true;
                 break;
-            case 'c':
-                cout << "Processing is not started" << endl;
-                break;
             case 'i':
-                mShowGui = true;
+                mShowGui = !mShowGui;
                 break;
             case 'r':
                 handleResolution();
                 break;
             case 'h':
+                cout << "Input history: ";
                 cin >> history;
-                mVideoProcessor.CreateNewBackgroundSubtractor(history);
+                cout << "Input threshold";
+                cin >> threshold;
+                mVideoProcessor.CreateNewBackgroundSubtractor(history, threshold);
                 break;
             case 'q':
                 stop = true;
