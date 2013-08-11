@@ -25,9 +25,9 @@ VideoProcessor::VideoProcessor()
 
     mHistory = 500;
     mThreshold = 16;
-    //mThresholdGen = 0;
-
     mpBackgroundSubtractor = new BackgroundSubtractorMOG2(mHistory, mThreshold);
+
+    mHasEllipse = false;
 }
 
 VideoProcessor::~VideoProcessor()
@@ -77,7 +77,6 @@ void VideoProcessor::RunWithGui()
 
         string name_original_frame = "Original Frame";
         string name_foreground_mask = "Foreground Mask";
-        //string name_morphological_mask = "Morphological Mask";
         string name_erode_mask = "Erode Mask";
         string name_dilate_mask = "Dilate Mask";
         string name_contours_mask = "Contours Mask";
@@ -86,7 +85,6 @@ void VideoProcessor::RunWithGui()
 
         namedWindow(name_original_frame, CV_WINDOW_AUTOSIZE);
         namedWindow(name_foreground_mask, CV_WINDOW_AUTOSIZE);
-        //namedWindow(name_morphological_mask, CV_WINDOW_AUTOSIZE);
         namedWindow(name_dilate_mask, CV_WINDOW_AUTOSIZE);
         namedWindow(name_erode_mask, CV_WINDOW_AUTOSIZE);
         namedWindow(name_contours_mask, CV_WINDOW_AUTOSIZE);
@@ -95,10 +93,6 @@ void VideoProcessor::RunWithGui()
         createTrackbar("Erode iterations", name_erode_mask, &mErodeIterations, 50);
         createTrackbar("Dilate element size", name_dilate_mask, &mDilateElementSize, 50);
         createTrackbar("Dilate iterations", name_dilate_mask, &mDilateIterations, 50);
-
-        //createTrackbar("History", name_original_frame, &mHistory, 3000);
-        //createTrackbar("Threshold", name_original_frame, &mThreshold, 50);
-        //createTrackbar("Threshold Gen", name_original_frame, &mThresholdGen, 50);
 
         while (true)
         {
@@ -109,10 +103,10 @@ void VideoProcessor::RunWithGui()
                 throw runtime_error("Could not read new frame");
 
             processFrame();
+            ellipse(mOriginalFrame, mEllipse, Scalar(0, 255, 0), 2, 8);
 
             imshow(name_original_frame, mOriginalFrame);
             imshow(name_foreground_mask, mForegroundMask);
-            //imshow(name_morphological_mask, mMorphologicalMask);
             imshow(name_dilate_mask, mDilateMask);
             imshow(name_erode_mask, mErodeMask);
             imshow(name_contours_mask, mContoursMask);
@@ -173,7 +167,7 @@ void VideoProcessor::processFrame()
     //Canny(blur, canny, 10, hey);
     */
     (*mpBackgroundSubtractor)(mOriginalFrame, mForegroundMask);
-    threshold(mForegroundMask, mThresholdMask, 127, 255, THRESH_BINARY);
+    threshold(mForegroundMask, mThresholdMask, 127, 255, THRESH_BINARY); // Remove shadows
 
     Mat erode_element = getStructuringElement(MORPH_ELLIPSE, Size(mErodeElementSize, mErodeElementSize));
     erode(mThresholdMask, mErodeMask, erode_element, Point(-1, -1), mErodeIterations);
@@ -190,77 +184,35 @@ void VideoProcessor::processFrame()
     // TODO: CV_RETR_TREE
 
     drawContours(mOriginalFrame, contours, -1, Scalar(0, 0, 255), 2);
-    mEllipses.clear();
-
-    for(unsigned int iContour = 0; iContour < contours.size(); iContour++)
-        if(contours[iContour].size() > 5)
-            mEllipses.push_back(fitEllipse(Mat(contours[iContour])));
-
-    Scalar color = Scalar(0, 255, 0);
+    vector<Point> one_contour;
 
     for(unsigned int iContour = 0; iContour < contours.size(); iContour++)
     {
-        /*
-        //                if(hierarchy[i][3] == -1)
-        //                {
-        //                    color = Scalar(255, 0, 0);
-        //                }
-        //
-        //                if(hierarchy[i][2] == -1)
-        //                {
-        //                    color = Scalar(0, 0, 255);
-        //                }
-        */
-        ellipse(mOriginalFrame, mEllipses[iContour], color, 2, 8);
+        for(unsigned int iPoint = 0; iPoint < contours[iContour].size(); iPoint++)
+        {
+            one_contour.push_back(contours[iContour][iPoint]);
+        }
     }
-    /*
-    //            unsigned int cmin = 100;
-    //            unsigned int cmax = 1000;
-    //
-    //            vector<vector<Point> >::const_iterator itc = contours.begin();
-    //            vector<Point> pts;
-    //            while (itc != contours.end())
-    //            {
-    //                if (itc->size() > cmin && itc->size() < cmax)
-    //                {
-    //                    vector<Point>::const_iterator pnt = (*itc).begin();
-    //                    while (pnt != (*itc).end())
-    //                    {
-    //                        pts.push_back(*pnt);
-    //                    }
-    //
-    //                    ++itc;
-    //                }
-    //                else
-    //                {
-    //                    ++itc;
-    //                }
-    //            }
-    //
-    //            if (pts.size() != 0)
-    //            {
-    //                Mat pointsMatrix = Mat(pts);
-    //                Scalar color(0, 255, 0);
-    //
-    //                Rect boundingRectangle = boundingRect(pointsMatrix);
-    //
-    //                _heightOfRectangle = boundingRectangle.height;
-    //
-    //                rectangle(_originalFrame, boundingRectangle, color, 2);
-    //            }
-    */
+
+    if(one_contour.size() > 5)
+    {
+        mEllipse = fitEllipse(Mat(one_contour));
+        mHasEllipse = true;
+    }
+    else
+        mHasEllipse = false;
 }
 
 void VideoProcessor::collectData()
 {
     if(mVideoDataCollection.size() < 100)
     {
-        if(mEllipses.size() != 0)
+        if(mHasEllipse) // TODO: register even is there is not ellipse
         {
             VideoData video_data(
                         boost::posix_time::microsec_clock::local_time(),
                         mFps,
-                        mEllipses[0].size.height);
+                        mEllipse.size.height);
             mVideoDataCollection.push_back(video_data);
         }
     }

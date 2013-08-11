@@ -38,7 +38,6 @@ private:
     cv::BackgroundSubtractorMOG2* mpBackgroundSubtractor;
     int mHistory;
     float mThreshold;
-    //int mThresholdGen;
 
     cv::Mat mOriginalFrame;
     cv::Mat mForegroundMask;
@@ -59,7 +58,9 @@ private:
 
     std::vector<boost::thread*> mWriteProcesses;
     boost::mutex mFileMutex;
-    std::vector<cv::RotatedRect> mEllipses;
+
+    cv::RotatedRect mEllipse;
+    bool mHasEllipse;
     std::vector<VideoData> mVideoDataCollection;
 };
 }
