@@ -21,3 +21,5 @@ release/
 Makefile
 *.Debug
 *.Release
+
+*.csv

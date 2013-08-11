@@ -1,7 +1,11 @@
 #ifndef FALL_DETECTOR_VIDEO_PROCESSOR_H
 #define FALL_DETECTOR_VIDEO_PROCESSOR_H
 
+#include <vector>
+#include <boost/thread.hpp>
 #include <opencv2/opencv.hpp>
+
+#include "helpers.h"
 
 namespace FallDetector
 {
@@ -17,25 +21,39 @@ public:
     void SetResolution(int width, int height);
     std::string PrintResolution();
 
+    void CreateNewBackgroundSubtractor(int history);
+    int GetHistory();
+
 private:
     void processFrame();
-    int log();
+    void log(std::string fileName, std::vector<VideoData> data);
+    void clearStop();
 
     cv::VideoCapture mVideoCapture;
-    cv::BackgroundSubtractorMOG2 mBackgroundSubtractor;
+
+    cv::BackgroundSubtractorMOG2* mpBackgroundSubtractor;
+    int mHistory;
+    //int mThreshold;
+    //int mThresholdGen;
 
     cv::Mat mOriginalFrame;
     cv::Mat mForegroundMask;
     cv::Mat mThresholdMask;
-    cv::Mat mMorphologicalMask;
-    //cv::Mat mErodeMask;
-    //cv::Mat mDilateMask;
+    cv::Mat mErodeMask;
+    cv::Mat mDilateMask;
     cv::Mat mContoursMask;
+
+    int mDilateElementSize;
+    int mDilateIterations;
 
     double mFps;
 
     int mResolutionWidth;
     int mResolutionHeight;
+
+    std::vector<boost::thread*> mWriteProcesses;
+    boost::mutex mFileMutex;
+    std::vector<VideoData> mVideoDataCollection;
 };
 }
 

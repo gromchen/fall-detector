@@ -17,11 +17,13 @@ TEMPLATE = app
 
 SOURCES += main.cpp \
     application.cpp \
-    video_processor.cpp
+    video_processor.cpp \
+    helpers.cpp
 
 HEADERS += \
     application.h \
-    video_processor.h
+    video_processor.h \
+    helpers.h
 
 win32 {
     INCLUDEPATH += $(OPENCV_DIR)\include \
@@ -33,7 +35,8 @@ win32 {
         -lopencv_features2d246d \
         -lopencv_calib3d246d \
         -lopencv_video246d \
-        -lopencv_imgproc246d
+        -lopencv_imgproc246d \
+        -lopencv_objdetect246d
 
     LIBS += -L$(BOOST_DIR)\lib \
         -lboost_thread-mgw47-mt-d-1_54 \

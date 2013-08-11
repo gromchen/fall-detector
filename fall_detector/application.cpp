@@ -14,8 +14,7 @@ Application::Application()
 
 Application::~Application()
 {
-    if(mpProcessing)
-        delete mpProcessing;
+    delete mpProcessing;
 }
 
 void Application::Run()
@@ -26,7 +25,8 @@ void Application::Run()
     {
         cout << "Running: " << mIsRunning << "; "
              << "Camera resolution: " << mVideoProcessor.PrintResolution() << "; "
-             << "Show GUI: " << mShowGui << endl
+             << "Show GUI: " << mShowGui << "; "
+             << "History: " << mVideoProcessor.GetHistory() << endl
              << "Available commands:" << endl
              << "s - Start processing" << endl
              << "c - Stop processing" << endl
@@ -44,6 +44,7 @@ void Application::Run()
             case 's':
             case 'i':
             case 'r':
+            case 'h':
                 cout << "Processing is running, try to stop first" << endl;
                 break;
             case 'c':
@@ -68,6 +69,8 @@ void Application::Run()
         }
         else
         {
+            int history = 0;
+
             switch (key)
             {
             case 's':
@@ -86,6 +89,10 @@ void Application::Run()
                 break;
             case 'r':
                 handleResolution();
+                break;
+            case 'h':
+                cin >> history;
+                mVideoProcessor.CreateNewBackgroundSubtractor(history);
                 break;
             case 'q':
                 stop = true;
