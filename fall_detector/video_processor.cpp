@@ -27,7 +27,8 @@ VideoProcessor::VideoProcessor()
     mThreshold = 16;
     mpBackgroundSubtractor = new BackgroundSubtractorMOG2(mHistory, mThreshold);
 
-    mHasEllipse = false;
+    mObjectFound = false;
+    mObjectFromOneContour = 0;
 
     mMaxAreaOfObject = mFrameHeight*mFrameWidth/1.5;
 }
@@ -95,6 +96,7 @@ void VideoProcessor::RunWithGui()
         createTrackbar("Erode iterations", name_erode_mask, &mErodeIterations, 50);
         createTrackbar("Dilate element size", name_dilate_mask, &mDilateElementSize, 50);
         createTrackbar("Dilate iterations", name_dilate_mask, &mDilateIterations, 50);
+        createTrackbar("One contours or several", name_original_frame, &mObjectFromOneContour, 1);
 
         while (true)
         {
@@ -105,7 +107,12 @@ void VideoProcessor::RunWithGui()
                 throw runtime_error("Could not read new frame");
 
             processFrame();
-            ellipse(mOriginalFrame, mEllipse, Scalar(0, 255, 0), 2);
+
+            if(mObjectFound == true)
+            {
+                ellipse(mOriginalFrame, mEllipse, Scalar(0, 255, 0), 2);
+                //circle(mOriginalFrame, Point(x, y), 20, Scalar(255, 0, 0),2);
+            }
 
             imshow(name_original_frame, mOriginalFrame);
             imshow(name_foreground_mask, mForegroundMask);
@@ -187,63 +194,68 @@ void VideoProcessor::processFrame()
 
     drawContours(mOriginalFrame, contours, -1, Scalar(0, 0, 255), 2);
 
-    // TODO: only one ellipse
-    vector<Point> one_contour;
 
-    for(unsigned int iContour = 0; iContour < contours.size(); iContour++)
-    {
-        for(unsigned int iPoint = 0; iPoint < contours[iContour].size(); iPoint++)
-        {
-            one_contour.push_back(contours[iContour][iPoint]);
-        }
-    }
-
-    if(one_contour.size() > 5)
-    {
-        mEllipse = fitEllipse(Mat(one_contour));
-        mHasEllipse = true;
-    }
-    else
-        mHasEllipse = false;
-
-    double reference_area = 0;
-    bool mObjectFound = false;
-    int x;
-    int y;
-    RotatedRect ell;
+    mObjectFound = false;
+    //int x;
+    //int y;
 
     if(hierarchy.size() > 0)
     {
-        int number_of_objects = hierarchy.size();
-
-        if(number_of_objects < mcMaxNumberOfObjects)
+        if(hierarchy.size() < mcMaxNumberOfObjects)
         {
-            for(int iContour = 0; iContour >= 0; iContour = hierarchy[iContour][0])
+            if(mObjectFromOneContour == 0)
             {
-                Moments object_moments = moments(Mat(contours[iContour]));
-                double area = object_moments.m00;
+                double reference_area = 0;
 
-                if(area > mcMinAreaOfObject && area < mMaxAreaOfObject && area > reference_area)
+                for(int iContour = 0; iContour >= 0; iContour = hierarchy[iContour][0])
                 {
-                    if(contours[iContour].size() > 5)
+                    Moments object_moments = moments(Mat(contours[iContour]));
+                    double area = object_moments.m00;
+
+                    if(area > mcMinAreaOfObject
+                            && area < mMaxAreaOfObject
+                            && area > reference_area
+                            && contours[iContour].size() > 5)
                     {
-                        // TODO: collect only large contours
-                        ell = fitEllipse(Mat(contours[iContour]));
+                        mEllipse = fitEllipse(Mat(contours[iContour]));
                         //x = object_moments.m10/area;
                         //y = object_moments.m01/area;
                         mObjectFound = true;
+                        reference_area = area;
+                    }
+                    else
+                    {
+                        mObjectFound = false;
                     }
                 }
-                else
-                {
-                    mObjectFound = false;
-                }
             }
-
-            if(mObjectFound == true)
+            else
             {
-                ellipse(mOriginalFrame, ell, Scalar(255, 0, 0), 4);
-                //circle(mOriginalFrame, Point(x, y), 20, Scalar(255, 0, 0),2);
+                vector<Point> one_contour;
+
+                for(int iContour = 0; iContour >= 0; iContour = hierarchy[iContour][0])
+                {
+                    Moments object_moments = moments(Mat(contours[iContour]));
+                    double area = object_moments.m00;
+
+                    if(area > mcMinAreaOfObject
+                            && area < mMaxAreaOfObject
+                            && contours[iContour].size() > 5)
+                    {
+                        for(unsigned int iPoint = 0; iPoint < contours[iContour].size(); iPoint++)
+                        {
+                            one_contour.push_back(contours[iContour][iPoint]);
+                        }
+                    }
+                }
+
+                if(one_contour.size() > 5)
+                {
+                    mEllipse = fitEllipse(Mat(one_contour));
+                    mObjectFound = true;
+                }
+                else
+                    mObjectFound = false;
             }
         }
     }
@@ -253,7 +265,7 @@ void VideoProcessor::collectData()
 {
     if(mVideoDataCollection.size() < 100)
     {
-        if(mHasEllipse) // TODO: register even is there is not ellipse
+        if(mObjectFound) // TODO: register even is there is not ellipse
         {
             VideoData video_data(
                         boost::posix_time::microsec_clock::local_time(),

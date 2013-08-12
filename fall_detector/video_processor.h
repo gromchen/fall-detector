@@ -59,12 +59,13 @@ private:
     std::vector<boost::thread*> mWriteProcesses;
     boost::mutex mFileMutex;
 
+    int mObjectFromOneContour;
     cv::RotatedRect mEllipse;
-    bool mHasEllipse;
+    bool mObjectFound;
     std::vector<VideoData> mVideoDataCollection;
 
-    static const int mcMaxNumberOfObjects = 50;
-    static const int mcMinAreaOfObject = 20*20;
+    static const unsigned int mcMaxNumberOfObjects = 50;
+    static const unsigned int mcMinAreaOfObject = 20*20;
     int mMaxAreaOfObject;
 };
 }
