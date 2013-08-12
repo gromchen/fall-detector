@@ -15,8 +15,8 @@ namespace FallDetector
 VideoProcessor::VideoProcessor()
 //: mBackgroundSubtractor(16, 16, true)
 {
-    mResolutionWidth = 320;
-    mResolutionHeight = 240;
+    mFrameWidth = 320;
+    mFrameHeight = 240;
 
     mErodeElementSize = 3;
     mErodeIterations = 2;
@@ -28,6 +28,8 @@ VideoProcessor::VideoProcessor()
     mpBackgroundSubtractor = new BackgroundSubtractorMOG2(mHistory, mThreshold);
 
     mHasEllipse = false;
+
+    mMaxAreaOfObject = mFrameHeight*mFrameWidth/1.5;
 }
 
 VideoProcessor::~VideoProcessor()
@@ -42,8 +44,8 @@ void VideoProcessor::RunWithoutGui()
         if (!mVideoCapture.open(0))
             throw runtime_error("Could not open video device");
 
-        mVideoCapture.set(CV_CAP_PROP_FRAME_WIDTH, mResolutionWidth);
-        mVideoCapture.set(CV_CAP_PROP_FRAME_HEIGHT, mResolutionHeight);
+        mVideoCapture.set(CV_CAP_PROP_FRAME_WIDTH, mFrameWidth);
+        mVideoCapture.set(CV_CAP_PROP_FRAME_HEIGHT, mFrameHeight);
 
         while (true)
         {
@@ -72,8 +74,8 @@ void VideoProcessor::RunWithGui()
         if (!mVideoCapture.open(0))
             throw runtime_error("Could not open video device");
 
-        mVideoCapture.set(CV_CAP_PROP_FRAME_WIDTH, mResolutionWidth);
-        mVideoCapture.set(CV_CAP_PROP_FRAME_HEIGHT, mResolutionHeight);
+        mVideoCapture.set(CV_CAP_PROP_FRAME_WIDTH, mFrameWidth);
+        mVideoCapture.set(CV_CAP_PROP_FRAME_HEIGHT, mFrameHeight);
 
         string name_original_frame = "Original Frame";
         string name_foreground_mask = "Foreground Mask";
@@ -103,7 +105,7 @@ void VideoProcessor::RunWithGui()
                 throw runtime_error("Could not read new frame");
 
             processFrame();
-            ellipse(mOriginalFrame, mEllipse, Scalar(0, 255, 0), 2, 8);
+            ellipse(mOriginalFrame, mEllipse, Scalar(0, 255, 0), 2);
 
             imshow(name_original_frame, mOriginalFrame);
             imshow(name_foreground_mask, mForegroundMask);
@@ -127,13 +129,13 @@ void VideoProcessor::RunWithGui()
 
 void VideoProcessor::SetResolution(int width, int height)
 {
-    mResolutionWidth = width;
-    mResolutionHeight = height;
+    mFrameWidth = width;
+    mFrameHeight = height;
 }
 
 std::string VideoProcessor::PrintResolution()
 {
-    return IntToString(mResolutionWidth) + "x" + IntToString(mResolutionHeight);
+    return IntToString(mFrameWidth) + "x" + IntToString(mFrameHeight);
 }
 
 void VideoProcessor::CreateNewBackgroundSubtractor(int history, float threashold)
@@ -175,15 +177,17 @@ void VideoProcessor::processFrame()
     Mat dilate_element = getStructuringElement(MORPH_ELLIPSE, Size(mDilateElementSize, mDilateElementSize));
     dilate(mErodeMask, mDilateMask, dilate_element, Point(-1, -1), mDilateIterations);
 
-    //vector<Vec4i> hierarchy;
+
     //findContours(foreground_mask, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
 
     mDilateMask.copyTo(mContoursMask);
     vector<vector<Point> > contours;
-    findContours(mContoursMask, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
-    // TODO: CV_RETR_TREE
+    vector<Vec4i> hierarchy;
+    findContours(mContoursMask, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
 
     drawContours(mOriginalFrame, contours, -1, Scalar(0, 0, 255), 2);
+
+    // TODO: only one ellipse
     vector<Point> one_contour;
 
     for(unsigned int iContour = 0; iContour < contours.size(); iContour++)
@@ -201,6 +205,48 @@ void VideoProcessor::processFrame()
     }
     else
         mHasEllipse = false;
+
+    double reference_area = 0;
+    bool mObjectFound = false;
+    int x;
+    int y;
+    RotatedRect ell;
+
+    if(hierarchy.size() > 0)
+    {
+        int number_of_objects = hierarchy.size();
+
+        if(number_of_objects < mcMaxNumberOfObjects)
+        {
+            for(int iContour = 0; iContour >= 0; iContour = hierarchy[iContour][0])
+            {
+                Moments object_moments = moments(Mat(contours[iContour]));
+                double area = object_moments.m00;
+
+                if(area > mcMinAreaOfObject && area < mMaxAreaOfObject && area > reference_area)
+                {
+                    if(contours[iContour].size() > 5)
+                    {
+                        // TODO: collect only large contours
+                        ell = fitEllipse(Mat(contours[iContour]));
+                        //x = object_moments.m10/area;
+                        //y = object_moments.m01/area;
+                        mObjectFound = true;
+                    }
+                }
+                else
+                {
+                    mObjectFound = false;
+                }
+            }
+
+            if(mObjectFound == true)
+            {
+                ellipse(mOriginalFrame, ell, Scalar(255, 0, 0), 4);
+                //circle(mOriginalFrame, Point(x, y), 20, Scalar(255, 0, 0),2);
+            }
+        }
+    }
 }
 
 void VideoProcessor::collectData()

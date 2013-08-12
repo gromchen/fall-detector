@@ -53,8 +53,8 @@ private:
 
     double mFps;
 
-    int mResolutionWidth;
-    int mResolutionHeight;
+    int mFrameWidth;
+    int mFrameHeight;
 
     std::vector<boost::thread*> mWriteProcesses;
     boost::mutex mFileMutex;
@@ -62,6 +62,10 @@ private:
     cv::RotatedRect mEllipse;
     bool mHasEllipse;
     std::vector<VideoData> mVideoDataCollection;
+
+    static const int mcMaxNumberOfObjects = 50;
+    static const int mcMinAreaOfObject = 20*20;
+    int mMaxAreaOfObject;
 };
 }
 
