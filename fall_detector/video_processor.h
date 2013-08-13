@@ -61,12 +61,19 @@ private:
 
     int mObjectFromOneContour;
     cv::RotatedRect mEllipse;
+    float mOrientation;
+    float ratio;
     bool mObjectFound;
     std::vector<VideoData> mVideoDataCollection;
 
     static const unsigned int mcMaxNumberOfObjects = 50;
     static const unsigned int mcMinAreaOfObject = 20*20;
     int mMaxAreaOfObject;
+
+    boost::chrono::high_resolution_clock::time_point mTimeOfPreviousSecond;
+    std::vector<cv::RotatedRect> mEllipsesAfterOneSecond;
+    double mStandardDeviationOfOrientation;
+    int mFrameCount;
 };
 }
 

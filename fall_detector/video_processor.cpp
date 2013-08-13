@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <sstream>
+#include <cmath>
 #include <boost/chrono.hpp>
 #include <boost/thread/thread.hpp>
 
@@ -13,7 +14,6 @@ using namespace cv;
 namespace FallDetector
 {
 VideoProcessor::VideoProcessor()
-//: mBackgroundSubtractor(16, 16, true)
 {
     mFrameWidth = 320;
     mFrameHeight = 240;
@@ -31,6 +31,10 @@ VideoProcessor::VideoProcessor()
     mObjectFromOneContour = 0;
 
     mMaxAreaOfObject = mFrameHeight*mFrameWidth/1.5;
+
+    mStandardDeviationOfOrientation = 0;
+
+    mFps = 0;
 }
 
 VideoProcessor::~VideoProcessor()
@@ -48,18 +52,12 @@ void VideoProcessor::RunWithoutGui()
         mVideoCapture.set(CV_CAP_PROP_FRAME_WIDTH, mFrameWidth);
         mVideoCapture.set(CV_CAP_PROP_FRAME_HEIGHT, mFrameHeight);
 
+        mFrameCount = 0;
+        mTimeOfPreviousSecond = high_resolution_clock::now();
+
         while (true)
         {
-            this_thread::interruption_point();
-            high_resolution_clock::time_point start_time = high_resolution_clock::now();
-
-            if (!mVideoCapture.read(mOriginalFrame))
-                throw runtime_error("Could not read new frame");
-
             processFrame();
-            mFps = 1000.0 / duration_cast<milliseconds>(
-                        high_resolution_clock::now() - start_time).count();
-            collectData();
         }
     }
     catch(thread_interrupted&)
@@ -98,21 +96,15 @@ void VideoProcessor::RunWithGui()
         createTrackbar("Dilate iterations", name_dilate_mask, &mDilateIterations, 50);
         createTrackbar("One contours or several", name_original_frame, &mObjectFromOneContour, 1);
 
+        mFrameCount = 0;
+        mTimeOfPreviousSecond = high_resolution_clock::now();
+
         while (true)
         {
-            this_thread::interruption_point();
-            high_resolution_clock::time_point start_time = high_resolution_clock::now();
-
-            if (!mVideoCapture.read(mOriginalFrame))
-                throw runtime_error("Could not read new frame");
-
             processFrame();
 
-            if(mObjectFound == true)
-            {
+            if(mObjectFound)
                 ellipse(mOriginalFrame, mEllipse, Scalar(0, 255, 0), 2);
-                //circle(mOriginalFrame, Point(x, y), 20, Scalar(255, 0, 0),2);
-            }
 
             imshow(name_original_frame, mOriginalFrame);
             imshow(name_foreground_mask, mForegroundMask);
@@ -121,10 +113,6 @@ void VideoProcessor::RunWithGui()
             imshow(name_contours_mask, mContoursMask);
 
             waitKey(30);
-
-            mFps = 1000.0 / duration_cast<milliseconds>(
-                        high_resolution_clock::now() - start_time).count();
-            collectData();
         }
     }
     catch(thread_interrupted&)
@@ -165,18 +153,14 @@ float VideoProcessor::GetThreshold()
 
 void VideoProcessor::processFrame()
 {
-    /*
-    //cvtColor(frame, _grayFrame, CV_BGR2GRAY);
+    this_thread::interruption_point();
+    mFrameCount++;
 
-    //Mat bilateral_filter_output;
-    //blur(_grayFrame, bilateral_filter_output, Size(21, 21)); // NOTE: not big change
-    //medianBlur(_grayFrame, bilateral_filter_output, 41); // NOTE: not big change
-    //GaussianBlur(_grayFrame, bilateral_filter_output, Size(21, 21), 0); // NOTE: not big change
+    if (!mVideoCapture.read(mOriginalFrame))
+        throw runtime_error("Could not read new frame");
 
-    //Canny(blur, canny, 10, hey);
-    */
     (*mpBackgroundSubtractor)(mOriginalFrame, mForegroundMask);
-    threshold(mForegroundMask, mThresholdMask, 127, 255, THRESH_BINARY); // Remove shadows
+    threshold(mForegroundMask, mThresholdMask, 127, 255, THRESH_BINARY); // Removes shadows
 
     Mat erode_element = getStructuringElement(MORPH_ELLIPSE, Size(mErodeElementSize, mErodeElementSize));
     erode(mThresholdMask, mErodeMask, erode_element, Point(-1, -1), mErodeIterations);
@@ -184,16 +168,11 @@ void VideoProcessor::processFrame()
     Mat dilate_element = getStructuringElement(MORPH_ELLIPSE, Size(mDilateElementSize, mDilateElementSize));
     dilate(mErodeMask, mDilateMask, dilate_element, Point(-1, -1), mDilateIterations);
 
-
-    //findContours(foreground_mask, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
-
     mDilateMask.copyTo(mContoursMask);
     vector<vector<Point> > contours;
     vector<Vec4i> hierarchy;
     findContours(mContoursMask, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
-
     drawContours(mOriginalFrame, contours, -1, Scalar(0, 0, 255), 2);
-
 
     mObjectFound = false;
     //int x;
@@ -218,6 +197,7 @@ void VideoProcessor::processFrame()
                             && contours[iContour].size() > 5)
                     {
                         mEllipse = fitEllipse(Mat(contours[iContour]));
+                        mEllipsesAfterOneSecond.push_back(mEllipse);
                         //x = object_moments.m10/area;
                         //y = object_moments.m01/area;
                         mObjectFound = true;
@@ -241,17 +221,14 @@ void VideoProcessor::processFrame()
                     if(area > mcMinAreaOfObject
                             && area < mMaxAreaOfObject
                             && contours[iContour].size() > 5)
-                    {
                         for(unsigned int iPoint = 0; iPoint < contours[iContour].size(); iPoint++)
-                        {
                             one_contour.push_back(contours[iContour][iPoint]);
-                        }
-                    }
                 }
 
                 if(one_contour.size() > 5)
                 {
                     mEllipse = fitEllipse(Mat(one_contour));
+                    mEllipsesAfterOneSecond.push_back(mEllipse);
                     mObjectFound = true;
                 }
                 else
@@ -259,20 +236,46 @@ void VideoProcessor::processFrame()
             }
         }
     }
+
+    high_resolution_clock::time_point current_time = high_resolution_clock::now();
+    int number_of_milliseconds = duration_cast<milliseconds>(current_time - mTimeOfPreviousSecond).count();
+
+    if(number_of_milliseconds >= 1000)
+    {
+        int sum_of_angles = 0;
+
+        for(unsigned int iEllipse = 0; iEllipse < mEllipsesAfterOneSecond.size(); iEllipse++)
+            sum_of_angles += mEllipsesAfterOneSecond[iEllipse].angle;
+
+        int average_of_angles = sum_of_angles/mEllipsesAfterOneSecond.size();
+        int mean_square_sum = 0;
+
+        for(unsigned int iEllipse = 0; iEllipse < mEllipsesAfterOneSecond.size(); iEllipse++)
+            mean_square_sum += pow(mEllipsesAfterOneSecond[iEllipse].angle - average_of_angles, 2);
+
+        mStandardDeviationOfOrientation = sqrt(mean_square_sum / mEllipsesAfterOneSecond.size());
+
+        mFps = mFrameCount * 1000 / number_of_milliseconds;
+        mTimeOfPreviousSecond = current_time;
+        mFrameCount = 0;
+
+        collectData();
+    }
 }
 
 void VideoProcessor::collectData()
 {
-    if(mVideoDataCollection.size() < 100)
+    if(mVideoDataCollection.size() < 10)
     {
-        if(mObjectFound) // TODO: register even is there is not ellipse
-        {
-            VideoData video_data(
-                        boost::posix_time::microsec_clock::local_time(),
-                        mFps,
-                        mEllipse.size.height);
-            mVideoDataCollection.push_back(video_data);
-        }
+        //if(mObjectFound) // TODO: register even is there is not ellipse
+        //{
+        VideoData video_data(
+                    boost::posix_time::microsec_clock::local_time(),
+                    mFps,
+                    mStandardDeviationOfOrientation,
+                    mEllipse);
+        mVideoDataCollection.push_back(video_data);
+        //}
     }
     else
         writeToFile();
@@ -314,7 +317,8 @@ void VideoProcessor::log(string fileName, vector<VideoData> data)
     {
         out_file << data[iData].mCurrentTime.time_of_day() << ","
                  << data[iData].mFps << ","
-                 << data[iData].mEllipseHeight << endl;
+                 << data[iData].mStandardDeviationOfOrientation << ","
+                 << data[iData].mRatio << endl;
     }
 
     out_file.close();

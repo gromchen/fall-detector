@@ -2,10 +2,14 @@
 
 namespace FallDetector
 {
-VideoData::VideoData(boost::posix_time::ptime currentTime, double fps, float ellipseHeight)
+VideoData::VideoData(boost::posix_time::ptime currentTime,
+                     double fps,
+                     double standardDeviatioinOfOrientation,
+                     cv::RotatedRect rotatedRectangle)
 {
     mCurrentTime = currentTime;
     mFps = fps;
-    mEllipseHeight = ellipseHeight;
+    mStandardDeviationOfOrientation = standardDeviatioinOfOrientation;
+    mRatio = rotatedRectangle.size.height / rotatedRectangle.size.width;
 }
 }
