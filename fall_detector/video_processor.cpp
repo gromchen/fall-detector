@@ -27,14 +27,7 @@ VideoProcessor::VideoProcessor()
     mThreshold = 16;
     mpBackgroundSubtractor = new BackgroundSubtractorMOG2(mHistory, mThreshold);
 
-    mObjectFound = false;
-    mObjectFromOneContour = 0;
-
-    mMaxAreaOfObject = mFrameHeight*mFrameWidth/1.5;
-
-    mStandardDeviationOfOrientation = 0;
-
-    mFps = 0;
+    initializeVariables();
 }
 
 VideoProcessor::~VideoProcessor()
@@ -52,8 +45,7 @@ void VideoProcessor::RunWithoutGui()
         mVideoCapture.set(CV_CAP_PROP_FRAME_WIDTH, mFrameWidth);
         mVideoCapture.set(CV_CAP_PROP_FRAME_HEIGHT, mFrameHeight);
 
-        mFrameCount = 0;
-        mTimeOfPreviousSecond = high_resolution_clock::now();
+        initializeVariables();
 
         while (true)
         {
@@ -96,8 +88,7 @@ void VideoProcessor::RunWithGui()
         createTrackbar("Dilate iterations", name_dilate_mask, &mDilateIterations, 50);
         createTrackbar("One contours or several", name_original_frame, &mObjectFromOneContour, 1);
 
-        mFrameCount = 0;
-        mTimeOfPreviousSecond = high_resolution_clock::now();
+        initializeVariables();
 
         while (true)
         {
@@ -151,6 +142,22 @@ float VideoProcessor::GetThreshold()
     return mThreshold;
 }
 
+void VideoProcessor::initializeVariables()
+{
+    mObjectFound = false;
+    mObjectFromOneContour = 0;
+
+    mMaxAreaOfObject = mFrameHeight*mFrameWidth/1.5;
+
+    mHasObjectDataAfterOneSecond = false;
+    mStandardDeviationOfOrientation = 0;
+    mStandardDeviatioinOfRatio = 0;
+
+    mFps = 0;
+    mTimeOfPreviousSecond = high_resolution_clock::now();
+    mFrameCount = 0;
+}
+
 void VideoProcessor::processFrame()
 {
     this_thread::interruption_point();
@@ -175,66 +182,67 @@ void VideoProcessor::processFrame()
     drawContours(mOriginalFrame, contours, -1, Scalar(0, 0, 255), 2);
 
     mObjectFound = false;
+    mEllipse = RotatedRect();
+    mStandardDeviationOfOrientation = 0;
+    mStandardDeviatioinOfRatio = 0;
     //int x;
     //int y;
 
-    if(hierarchy.size() > 0)
+    if(hierarchy.size() > 0 && hierarchy.size() < mcMaxNumberOfObjects)
     {
-        if(hierarchy.size() < mcMaxNumberOfObjects)
+        if(mObjectFromOneContour == 0)
         {
-            if(mObjectFromOneContour == 0)
+            double reference_area = 0;
+
+            for(int iContour = 0; iContour >= 0; iContour = hierarchy[iContour][0])
             {
-                double reference_area = 0;
+                Moments object_moments = moments(Mat(contours[iContour]));
+                double area = object_moments.m00;
 
-                for(int iContour = 0; iContour >= 0; iContour = hierarchy[iContour][0])
+                if(area > mcMinAreaOfObject
+                        && area < mMaxAreaOfObject
+                        && area > reference_area
+                        && contours[iContour].size() > 5)
                 {
-                    Moments object_moments = moments(Mat(contours[iContour]));
-                    double area = object_moments.m00;
-
-                    if(area > mcMinAreaOfObject
-                            && area < mMaxAreaOfObject
-                            && area > reference_area
-                            && contours[iContour].size() > 5)
-                    {
-                        mEllipse = fitEllipse(Mat(contours[iContour]));
-                        mEllipsesAfterOneSecond.push_back(mEllipse);
-                        //x = object_moments.m10/area;
-                        //y = object_moments.m01/area;
-                        mObjectFound = true;
-                        reference_area = area;
-                    }
-                    else
-                    {
-                        mObjectFound = false;
-                    }
-                }
-            }
-            else
-            {
-                vector<Point> one_contour;
-
-                for(int iContour = 0; iContour >= 0; iContour = hierarchy[iContour][0])
-                {
-                    Moments object_moments = moments(Mat(contours[iContour]));
-                    double area = object_moments.m00;
-
-                    if(area > mcMinAreaOfObject
-                            && area < mMaxAreaOfObject
-                            && contours[iContour].size() > 5)
-                        for(unsigned int iPoint = 0; iPoint < contours[iContour].size(); iPoint++)
-                            one_contour.push_back(contours[iContour][iPoint]);
-                }
-
-                if(one_contour.size() > 5)
-                {
-                    mEllipse = fitEllipse(Mat(one_contour));
-                    mEllipsesAfterOneSecond.push_back(mEllipse);
+                    mEllipse = fitEllipse(Mat(contours[iContour]));
+                    //x = object_moments.m10/area;
+                    //y = object_moments.m01/area;
                     mObjectFound = true;
+                    reference_area = area;
                 }
                 else
                     mObjectFound = false;
             }
         }
+        else
+        {
+            vector<Point> one_contour;
+
+            for(int iContour = 0; iContour >= 0; iContour = hierarchy[iContour][0])
+            {
+                Moments object_moments = moments(Mat(contours[iContour]));
+                double area = object_moments.m00;
+
+                if(area > mcMinAreaOfObject
+                        && area < mMaxAreaOfObject
+                        && contours[iContour].size() > 5)
+                    for(unsigned int iPoint = 0; iPoint < contours[iContour].size(); iPoint++)
+                        one_contour.push_back(contours[iContour][iPoint]);
+            }
+
+            if(one_contour.size() > 5)
+            {
+                mEllipse = fitEllipse(Mat(one_contour));
+                mObjectFound = true;
+            }
+            else
+                mObjectFound = false;
+        }
+    }
+
+    if(mObjectFound)
+    {
+        mEllipsesAfterOneSecond.push_back(mEllipse);
     }
 
     high_resolution_clock::time_point current_time = high_resolution_clock::now();
@@ -242,18 +250,44 @@ void VideoProcessor::processFrame()
 
     if(number_of_milliseconds >= 1000)
     {
-        int sum_of_angles = 0;
+        if(mEllipsesAfterOneSecond.size() != 0)
+        {
+            mHasObjectDataAfterOneSecond = true;
 
-        for(unsigned int iEllipse = 0; iEllipse < mEllipsesAfterOneSecond.size(); iEllipse++)
-            sum_of_angles += mEllipsesAfterOneSecond[iEllipse].angle;
+            int sum_of_angles = 0;
+            int sum_of_ratios = 0;
+            vector<double> ratios;
 
-        int average_of_angles = sum_of_angles/mEllipsesAfterOneSecond.size();
-        int mean_square_sum = 0;
+            for(unsigned int iEllipse = 0; iEllipse < mEllipsesAfterOneSecond.size(); iEllipse++)
+            {
+                sum_of_angles += mEllipsesAfterOneSecond[iEllipse].angle;
+                ratios.push_back(mEllipsesAfterOneSecond[iEllipse].size.height
+                                 /mEllipsesAfterOneSecond[iEllipse].size.width);
+                sum_of_ratios += ratios[iEllipse];
+            }
 
-        for(unsigned int iEllipse = 0; iEllipse < mEllipsesAfterOneSecond.size(); iEllipse++)
-            mean_square_sum += pow(mEllipsesAfterOneSecond[iEllipse].angle - average_of_angles, 2);
+            int average_of_angles = sum_of_angles/mEllipsesAfterOneSecond.size();
+            int average_of_ratios = sum_of_ratios/ratios.size();
+            int mean_square_sum_of_angles = 0;
+            int mean_square_sum_of_ratios = 0;
 
-        mStandardDeviationOfOrientation = sqrt(mean_square_sum / mEllipsesAfterOneSecond.size());
+            for(unsigned int iEllipse = 0; iEllipse < mEllipsesAfterOneSecond.size(); iEllipse++)
+            {
+                mean_square_sum_of_angles += pow(mEllipsesAfterOneSecond[iEllipse].angle - average_of_angles, 2);
+                mean_square_sum_of_ratios += pow(ratios[iEllipse] - average_of_ratios, 2);
+            }
+
+            mStandardDeviationOfOrientation = sqrt(mean_square_sum_of_angles / mEllipsesAfterOneSecond.size());
+            mStandardDeviatioinOfRatio = sqrt(mean_square_sum_of_ratios / ratios.size());
+
+            mEllipsesAfterOneSecond.clear();
+        }
+        else
+        {
+            mHasObjectDataAfterOneSecond = false;
+        }
+
+        // TODO: process sequence of deviations
 
         mFps = mFrameCount * 1000 / number_of_milliseconds;
         mTimeOfPreviousSecond = current_time;
@@ -266,17 +300,11 @@ void VideoProcessor::processFrame()
 void VideoProcessor::collectData()
 {
     if(mVideoDataCollection.size() < 10)
-    {
-        //if(mObjectFound) // TODO: register even is there is not ellipse
-        //{
-        VideoData video_data(
-                    boost::posix_time::microsec_clock::local_time(),
-                    mFps,
-                    mStandardDeviationOfOrientation,
-                    mEllipse);
-        mVideoDataCollection.push_back(video_data);
-        //}
-    }
+        mVideoDataCollection.push_back(VideoData(boost::posix_time::microsec_clock::local_time(),
+                                                 mFps,
+                                                 mStandardDeviationOfOrientation,
+                                                 mStandardDeviatioinOfRatio,
+                                                 mHasObjectDataAfterOneSecond));
     else
         writeToFile();
 }
@@ -316,9 +344,17 @@ void VideoProcessor::log(string fileName, vector<VideoData> data)
     for(unsigned int iData = 0; iData < data.size(); iData++)
     {
         out_file << data[iData].mCurrentTime.time_of_day() << ","
-                 << data[iData].mFps << ","
-                 << data[iData].mStandardDeviationOfOrientation << ","
-                 << data[iData].mRatio << endl;
+                 << data[iData].mFps << ",";
+
+        if(mHasObjectDataAfterOneSecond)
+        {
+            out_file << data[iData].mStandardDeviationOfOrientation << ","
+                     << data[iData].mStandardDeviationOfRatio << ",has object" << endl;
+        }
+        else
+        {
+            out_file << ",,without object" << endl;
+        }
     }
 
     out_file.close();

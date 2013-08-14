@@ -2,7 +2,6 @@
 #define VIDEO_DATA_H
 
 #include <boost/date_time.hpp>
-#include <opencv2/opencv.hpp>
 
 namespace FallDetector
 {
@@ -12,12 +11,14 @@ public:
     VideoData(boost::posix_time::ptime currentTime,
               double fps,
               double standardDeviatioinOfOrientation,
-              cv::RotatedRect rotatedRectangle);
+              double standardDeviationOfRatio,
+              bool objectDetected);
 
     boost::posix_time::ptime mCurrentTime;
     double mFps;
     float mStandardDeviationOfOrientation;
-    float mRatio;
+    float mStandardDeviationOfRatio;
+    bool mObjectDetected;
 };
 }
 #endif // VIDEO_DATA_H

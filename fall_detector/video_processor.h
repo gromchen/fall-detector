@@ -27,6 +27,7 @@ public:
     float GetThreshold();
 
 private:
+    void initializeVariables();
     void processFrame();
     void collectData();
     void writeToFile();
@@ -61,8 +62,6 @@ private:
 
     int mObjectFromOneContour;
     cv::RotatedRect mEllipse;
-    float mOrientation;
-    float ratio;
     bool mObjectFound;
     std::vector<VideoData> mVideoDataCollection;
 
@@ -72,7 +71,9 @@ private:
 
     boost::chrono::high_resolution_clock::time_point mTimeOfPreviousSecond;
     std::vector<cv::RotatedRect> mEllipsesAfterOneSecond;
+    bool mHasObjectDataAfterOneSecond;
     double mStandardDeviationOfOrientation;
+    double mStandardDeviatioinOfRatio;
     int mFrameCount;
 };
 }
