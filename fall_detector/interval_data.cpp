@@ -1,17 +1,17 @@
-#include "video_data.h"
+#include "interval_data.h"
 
 namespace FallDetector
 {
-VideoData::VideoData(boost::posix_time::ptime currentTime,
+IntervalData::IntervalData(boost::posix_time::ptime currentTime,
                      double fps,
                      double standardDeviatioinOfOrientation,
                      double standardDeviationOfRatio,
-                     bool objectDetected)
+                     int numberOfFoundObjects)
 {
     mCurrentTime = currentTime;
     mFps = fps;
     mStandardDeviationOfOrientation = standardDeviatioinOfOrientation;
     mStandardDeviationOfRatio = standardDeviationOfRatio;
-    mObjectDetected = objectDetected;
+    mNumberOfFoundObjects = numberOfFoundObjects;
 }
 }

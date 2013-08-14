@@ -1,12 +1,7 @@
 #ifndef FALL_DETECTOR_VIDEO_PROCESSOR_H
 #define FALL_DETECTOR_VIDEO_PROCESSOR_H
 
-#include <vector>
-#include <boost/thread.hpp>
-#include <opencv2/opencv.hpp>
-
-#include "helpers.h"
-#include "video_data.h"
+#include "interval_processor.h"
 
 namespace FallDetector
 {
@@ -27,12 +22,8 @@ public:
     float GetThreshold();
 
 private:
-    void initializeVariables();
     void processFrame();
-    void collectData();
-    void writeToFile();
     void clearStop();
-    void log(std::string fileName, std::vector<VideoData> data);
 
     cv::VideoCapture mVideoCapture;
 
@@ -52,29 +43,16 @@ private:
     int mDilateElementSize;
     int mDilateIterations;
 
-    double mFps;
-
     int mFrameWidth;
     int mFrameHeight;
 
-    std::vector<boost::thread*> mWriteProcesses;
-    boost::mutex mFileMutex;
-
-    int mObjectFromOneContour;
     cv::RotatedRect mEllipse;
     bool mObjectFound;
-    std::vector<VideoData> mVideoDataCollection;
-
     static const unsigned int mcMaxNumberOfObjects = 50;
     static const unsigned int mcMinAreaOfObject = 20*20;
     int mMaxAreaOfObject;
 
-    boost::chrono::high_resolution_clock::time_point mTimeOfPreviousSecond;
-    std::vector<cv::RotatedRect> mEllipsesAfterOneSecond;
-    bool mHasObjectDataAfterOneSecond;
-    double mStandardDeviationOfOrientation;
-    double mStandardDeviatioinOfRatio;
-    int mFrameCount;
+    FallDetector::IntervalProcessor mIntervalProcessor;
 };
 }
 

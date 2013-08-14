@@ -2,11 +2,17 @@
 #define HELPERS_H
 
 #include <string>
-
+#include <sstream>
 
 namespace FallDetector
 {
-std::string IntToString(int number);
+template<typename T>
+std::string ToString(T object)
+{
+    std::stringstream ss;
+    ss << object;
+    return ss.str();
+}
 }
 
 #endif // HELPERS_H
