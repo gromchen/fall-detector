@@ -24,6 +24,8 @@ VideoProcessor::VideoProcessor()
     mHistory = 500;
     mThreshold = 16;
     mpBackgroundSubtractor = new BackgroundSubtractorMOG2(mHistory, mThreshold);
+
+    mMhiMask = Mat::zeros(mFrameHeight, mFrameWidth, CV_32FC1);
 }
 
 VideoProcessor::~VideoProcessor()
@@ -70,12 +72,16 @@ void VideoProcessor::RunWithGui()
         string name_erode_mask = "Erode Mask";
         string name_dilate_mask = "Dilate Mask";
 
+        string name_mhi = "MHI";
+
         startWindowThread();
 
         namedWindow(name_original_frame, CV_WINDOW_AUTOSIZE);
         namedWindow(name_foreground_mask, CV_WINDOW_AUTOSIZE);
         namedWindow(name_dilate_mask, CV_WINDOW_AUTOSIZE);
         namedWindow(name_erode_mask, CV_WINDOW_AUTOSIZE);
+
+        namedWindow(name_mhi, CV_WINDOW_AUTOSIZE);
 
         createTrackbar("Erode element size", name_erode_mask, &mErodeElementSize, 50);
         createTrackbar("Erode iterations", name_erode_mask, &mErodeIterations, 50);
@@ -95,6 +101,8 @@ void VideoProcessor::RunWithGui()
             imshow(name_foreground_mask, mForegroundMask);
             imshow(name_dilate_mask, mDilateMask);
             imshow(name_erode_mask, mErodeMask);
+
+            imshow(name_mhi, mMhiMask);
 
             waitKey(30);
         }
@@ -149,6 +157,33 @@ void VideoProcessor::processFrame()
     // Removes shadows
     threshold(mForegroundMask, mThresholdMask, 127, 255, THRESH_BINARY);
 
+    // Calculate coefficient of motion
+    updateMotionHistory(mThresholdMask, mMhiMask, (double)clock(), 500);
+
+    unsigned int number_of_rows = mMhiMask.rows;
+    unsigned int number_of_columns = mMhiMask.cols;
+
+    double number_of_blob_pixels = 0;
+    double number_of_history_pixels = 0;
+
+    for(unsigned int iRow = 0; iRow < number_of_rows; iRow++)
+    {
+        unsigned char* foreground_data = mForegroundMask.ptr(iRow);
+        unsigned char* mhi_data = mMhiMask.ptr(iRow);
+
+        for(unsigned int iColumn = 0; iColumn < number_of_columns; iColumn++)
+        {
+            if(mhi_data[iColumn] > 0)
+                number_of_history_pixels++;
+
+            if(foreground_data[iColumn] > 0)
+                number_of_blob_pixels++;
+        }
+    }
+
+    double c_motion = 1.0* (number_of_history_pixels - number_of_blob_pixels)
+            / number_of_blob_pixels;
+
     Mat erode_element = getStructuringElement(MORPH_ELLIPSE,
                                               Size(mErodeElementSize,
                                                    mErodeElementSize));
@@ -170,8 +205,8 @@ void VideoProcessor::processFrame()
 
     mObjectFound = false;
     mEllipse = RotatedRect();
-    //int x;
-    //int y;
+    int x = 0;
+    int y = 0;
 
     if(hierarchy.size() > 0 && hierarchy.size() < mcMaxNumberOfObjects)
     {
@@ -182,18 +217,23 @@ void VideoProcessor::processFrame()
             Moments object_moments = moments(Mat(contours[iContour]));
             double area = object_moments.m00;
 
-            if(area > mcMinAreaOfObject && area < mMaxAreaOfObject && area > reference_area
+            if(area > mcMinAreaOfObject
+                    && area < mMaxAreaOfObject
+                    && area > reference_area
                     && contours[iContour].size() > 5)
             {
                 mEllipse = fitEllipse(Mat(contours[iContour]));
-                //x = object_moments.m10/area;
-                //y = object_moments.m01/area;
+                x = object_moments.m10/area;
+                y = object_moments.m01/area;
                 mObjectFound = true;
                 reference_area = area;
             }
         }
     }
+    cout << c_motion << endl;
 
-    mIntervalProcessor.IncludeObject(FrameData(mEllipse, mObjectFound));
+    mIntervalProcessor.IncludeObject(FrameData(c_motion,
+                                               mEllipse,
+                                               mObjectFound));
 }
 }

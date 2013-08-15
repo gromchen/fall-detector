@@ -4,8 +4,11 @@ using namespace cv;
 
 namespace FallDetector
 {
-FrameData::FrameData(cv::RotatedRect object, bool objectFound)
+FrameData::FrameData(double coefficientOfMotion,
+                     cv::RotatedRect object,
+                     bool objectFound)
 {
+    mCoefficientOfMotion = coefficientOfMotion;
     mObject = object;
     mObjectFound = objectFound;
 }

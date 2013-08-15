@@ -8,12 +8,16 @@ namespace FallDetector
 class FrameData
 {
 public:
-    FrameData(cv::RotatedRect object, bool objectFound);
+    FrameData(double coefficientOfMotion,
+              cv::RotatedRect object,
+              bool objectFound);
 
+    double GetCoefficientOfMotion() { return mCoefficientOfMotion; }
     bool ObjectFound() { return mObjectFound; }
     cv::RotatedRect GetObject() { return mObject; }
 
 private:
+    double mCoefficientOfMotion;
     cv::RotatedRect mObject;
     bool mObjectFound;
 };
