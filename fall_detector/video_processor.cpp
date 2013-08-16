@@ -24,8 +24,6 @@ VideoProcessor::VideoProcessor()
     mHistory = 500;
     mThreshold = 16;
     mpBackgroundSubtractor = new BackgroundSubtractorMOG2(mHistory, mThreshold);
-
-    mMhiMask = Mat::zeros(mFrameHeight, mFrameWidth, CV_32FC1);
 }
 
 VideoProcessor::~VideoProcessor()
@@ -43,6 +41,7 @@ void VideoProcessor::RunWithoutGui()
         mVideoCapture.set(CV_CAP_PROP_FRAME_WIDTH, mFrameWidth);
         mVideoCapture.set(CV_CAP_PROP_FRAME_HEIGHT, mFrameHeight);
         mMaxAreaOfObject = mFrameHeight*mFrameWidth/1.5;
+        mMhiMask = Mat::zeros(mFrameHeight, mFrameWidth, CV_32FC1);
 
         mIntervalProcessor.StartTracking();
 
@@ -66,6 +65,7 @@ void VideoProcessor::RunWithGui()
         mVideoCapture.set(CV_CAP_PROP_FRAME_WIDTH, mFrameWidth);
         mVideoCapture.set(CV_CAP_PROP_FRAME_HEIGHT, mFrameHeight);
         mMaxAreaOfObject = mFrameHeight*mFrameWidth/1.5;
+        mMhiMask = Mat::zeros(mFrameHeight, mFrameWidth, CV_32FC1);
 
         string name_original_frame = "Original Frame";
         string name_foreground_mask = "Foreground Mask";
@@ -83,10 +83,14 @@ void VideoProcessor::RunWithGui()
 
         namedWindow(name_mhi, CV_WINDOW_AUTOSIZE);
 
-        createTrackbar("Erode element size", name_erode_mask, &mErodeElementSize, 50);
-        createTrackbar("Erode iterations", name_erode_mask, &mErodeIterations, 50);
-        createTrackbar("Dilate element size", name_dilate_mask, &mDilateElementSize, 50);
-        createTrackbar("Dilate iterations", name_dilate_mask, &mDilateIterations, 50);
+        createTrackbar("Erode element size", name_erode_mask,
+                       &mErodeElementSize, 50);
+        createTrackbar("Erode iterations", name_erode_mask,
+                       &mErodeIterations, 50);
+        createTrackbar("Dilate element size", name_dilate_mask,
+                       &mDilateElementSize, 50);
+        createTrackbar("Dilate iterations", name_dilate_mask,
+                       &mDilateIterations, 50);
 
         mIntervalProcessor.StartTracking();
 
@@ -127,7 +131,8 @@ std::string VideoProcessor::PrintResolution()
     return ToString(mFrameWidth) + "x" + ToString(mFrameHeight);
 }
 
-void VideoProcessor::CreateNewBackgroundSubtractor(int history, float threashold)
+void VideoProcessor::CreateNewBackgroundSubtractor(int history,
+                                                   float threashold)
 {
     mHistory = history;
     mThreshold = threashold;
@@ -157,33 +162,7 @@ void VideoProcessor::processFrame()
     // Removes shadows
     threshold(mForegroundMask, mThresholdMask, 127, 255, THRESH_BINARY);
 
-    // Calculate coefficient of motion
-    updateMotionHistory(mThresholdMask, mMhiMask, (double)clock(), 500);
-
-    unsigned int number_of_rows = mMhiMask.rows;
-    unsigned int number_of_columns = mMhiMask.cols;
-
-    double number_of_blob_pixels = 0;
-    double number_of_history_pixels = 0;
-
-    for(unsigned int iRow = 0; iRow < number_of_rows; iRow++)
-    {
-        unsigned char* foreground_data = mForegroundMask.ptr(iRow);
-        unsigned char* mhi_data = mMhiMask.ptr(iRow);
-
-        for(unsigned int iColumn = 0; iColumn < number_of_columns; iColumn++)
-        {
-            if(mhi_data[iColumn] > 0)
-                number_of_history_pixels++;
-
-            if(foreground_data[iColumn] > 0)
-                number_of_blob_pixels++;
-        }
-    }
-
-    double c_motion = 1.0* (number_of_history_pixels - number_of_blob_pixels)
-            / number_of_blob_pixels;
-
+    // Morphological transformation
     Mat erode_element = getStructuringElement(MORPH_ELLIPSE,
                                               Size(mErodeElementSize,
                                                    mErodeElementSize));
@@ -196,6 +175,7 @@ void VideoProcessor::processFrame()
     dilate(mErodeMask, mDilateMask, dilate_element, Point(-1, -1),
            mDilateIterations);
 
+    // Contours
     mDilateMask.copyTo(mContoursMask);
     vector<vector<Point> > contours;
     vector<Vec4i> hierarchy;
@@ -203,6 +183,7 @@ void VideoProcessor::processFrame()
                  CV_CHAIN_APPROX_SIMPLE);
     drawContours(mOriginalFrame, contours, -1, Scalar(0, 0, 255), 2);
 
+    // Object detection
     mObjectFound = false;
     mEllipse = RotatedRect();
     int x = 0;
@@ -217,10 +198,8 @@ void VideoProcessor::processFrame()
             Moments object_moments = moments(Mat(contours[iContour]));
             double area = object_moments.m00;
 
-            if(area > mcMinAreaOfObject
-                    && area < mMaxAreaOfObject
-                    && area > reference_area
-                    && contours[iContour].size() > 5)
+            if(area > mcMinAreaOfObject && area < mMaxAreaOfObject
+                    && area > reference_area && contours[iContour].size() > 5)
             {
                 mEllipse = fitEllipse(Mat(contours[iContour]));
                 x = object_moments.m10/area;
@@ -230,10 +209,56 @@ void VideoProcessor::processFrame()
             }
         }
     }
-    cout << c_motion << endl;
 
-    mIntervalProcessor.IncludeObject(FrameData(c_motion,
-                                               mEllipse,
+    double c_motion = 0;
+
+    if(mObjectFound)
+        c_motion = calculateCoefficientOfMotion(mDilateMask, mMhiMask);
+
+    mIntervalProcessor.IncludeObject(FrameData(c_motion, mEllipse,
                                                mObjectFound));
+}
+
+double VideoProcessor::calculateCoefficientOfMotion(Mat &silhouette,
+                                                    Mat &mhiMask)
+{
+    updateMotionHistory(silhouette, mhiMask,
+                        (double)clock()/CLOCKS_PER_SEC, 1);
+
+    unsigned int number_of_rows = mhiMask.rows;
+    unsigned int number_of_columns = mhiMask.cols;
+
+    double number_of_blob_pixels = 0;
+    double number_of_history_pixels = 0;
+
+    for(unsigned int iRow = 0; iRow < number_of_rows; iRow++)
+    {
+        unsigned char* foreground_data = silhouette.ptr(iRow);
+        unsigned char* mhi_data = mhiMask.ptr(iRow);
+
+        for(unsigned int iColumn = 0; iColumn < number_of_columns; iColumn++)
+        {
+            if(mhi_data[iColumn] > 0)
+                number_of_history_pixels += 1;
+
+            if(foreground_data[iColumn] > 0)
+                number_of_blob_pixels += 1;
+        }
+    }
+
+    double c_motion = 0;
+
+    if(number_of_history_pixels > number_of_blob_pixels
+            && number_of_blob_pixels > 0)
+    {
+        c_motion = (number_of_history_pixels - number_of_blob_pixels)
+                / number_of_blob_pixels;
+    }
+
+    cout << number_of_history_pixels << " "
+         << number_of_blob_pixels << " "
+         << c_motion << endl;
+
+    return c_motion;
 }
 }

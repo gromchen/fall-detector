@@ -23,6 +23,7 @@ public:
 
 private:
     void processFrame();
+    double calculateCoefficientOfMotion(cv::Mat &silhouette, cv::Mat &mhiMask);
     void clearStop();
 
     cv::VideoCapture mVideoCapture;
