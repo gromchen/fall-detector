@@ -90,9 +90,14 @@ void IntervalProcessor::IncludeObject(FrameData frameData)
             standard_deviatioin_of_ratio = 0;
         }
 
+        // Determination of the fall
+        if(standard_deviation_of_orientation > 15
+                || standard_deviatioin_of_ratio > 0.9)
+            mFiniteStateMachine.Fall();
+        else
+            mFiniteStateMachine.Walk();
 
-        // TODO: process sequence of deviations
-
+        // Data collection
         double fps = mFrameDataCollection.size() * 1000.0 / number_of_milliseconds;
         mFrameDataCollection.clear();
         mTimeOfPreviousSecond = current_time;

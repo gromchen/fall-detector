@@ -21,7 +21,8 @@ SOURCES += main.cpp \
     data_collector.cpp \
     interval_processor.cpp \
     frame_data.cpp \
-    interval_data.cpp
+    interval_data.cpp \
+    finite_state_machine.cpp
 
 HEADERS += \
     application.h \
@@ -30,7 +31,8 @@ HEADERS += \
     data_collector.h \
     interval_processor.h \
     frame_data.h \
-    interval_data.h
+    interval_data.h \
+    finite_state_machine.h
 
 win32 {
     INCLUDEPATH += $(OPENCV_DIR)\include \
