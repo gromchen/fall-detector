@@ -13,6 +13,7 @@ namespace FallDetector
 {
 VideoProcessor::VideoProcessor()
 {
+    mCameraNumber = 1;
     mFrameWidth = 320;
     mFrameHeight = 240;
 
@@ -35,7 +36,7 @@ void VideoProcessor::RunWithoutGui()
 {
     try
     {
-        if (!mVideoCapture.open(0))
+        if (!mVideoCapture.open(mCameraNumber))
             throw runtime_error("Could not open video device");
 
         mVideoCapture.set(CV_CAP_PROP_FRAME_WIDTH, mFrameWidth);
@@ -59,7 +60,7 @@ void VideoProcessor::RunWithGui()
 {
     try
     {
-        if (!mVideoCapture.open(0))
+        if (!mVideoCapture.open(mCameraNumber))
             throw runtime_error("Could not open video device");
 
         mVideoCapture.set(CV_CAP_PROP_FRAME_WIDTH, mFrameWidth);
@@ -101,12 +102,12 @@ void VideoProcessor::RunWithGui()
             if(mObjectFound)
                 ellipse(mOriginalFrame, mEllipse, Scalar(0, 255, 0), 2);
 
-            if(mIntervalProcessor.FallDetected())
-                putText(mOriginalFrame, "Fall detected", Point(0, 0), 1, 1,
-                        Scalar(0, 255, 0), 2);
-            else
-                putText(mOriginalFrame, "Stable condition", Point(0, 0), 1, 1,
-                        Scalar(255, 0, 0), 2);
+//            if(mIntervalProcessor.FallDetected())
+//                putText(mOriginalFrame, "Fall detected", Point(0, 0), 1, 1,
+//                        Scalar(0, 255, 0), 2);
+//            else
+//                putText(mOriginalFrame, "Stable condition", Point(0, 0), 1, 1,
+//                        Scalar(255, 0, 0), 2);
 
             imshow(name_original_frame, mOriginalFrame);
             imshow(name_foreground_mask, mForegroundMask);
@@ -145,16 +146,6 @@ void VideoProcessor::CreateNewBackgroundSubtractor(int history,
     mThreshold = threashold;
     delete mpBackgroundSubtractor;
     mpBackgroundSubtractor = new BackgroundSubtractorMOG2(mHistory, mThreshold);
-}
-
-int VideoProcessor::GetHistory()
-{
-    return mHistory;
-}
-
-float VideoProcessor::GetThreshold()
-{
-    return mThreshold;
 }
 
 void VideoProcessor::processFrame()

@@ -17,9 +17,12 @@ public:
     void SetResolution(int width, int height);
     std::string PrintResolution();
 
+    void SetCamera(unsigned int camera_number) { mCameraNumber = camera_number; }
+    unsigned int GetCamera() { return mCameraNumber; }
+
     void CreateNewBackgroundSubtractor(int history, float threashold);
-    int GetHistory();
-    float GetThreshold();
+    int GetHistory() { return mHistory; }
+    float GetThreshold() { return mThreshold; }
 
 private:
     void processFrame();
@@ -27,6 +30,7 @@ private:
     void clearStop();
 
     cv::VideoCapture mVideoCapture;
+    unsigned int mCameraNumber;
 
     cv::BackgroundSubtractorMOG2* mpBackgroundSubtractor;
     int mHistory;

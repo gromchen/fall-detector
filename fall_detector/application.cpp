@@ -24,6 +24,7 @@ void Application::Run()
     while (!stop)
     {
         cout << "Running:\t\t" << mIsRunning << endl
+             << "Camera number:\t\t" << mVideoProcessor.GetCamera() << endl
              << "Camera resolution:\t" << mVideoProcessor.PrintResolution() << endl
              << "Show GUI:\t\t" << mShowGui << endl
              << "History:\t\t" << mVideoProcessor.GetHistory() << endl
@@ -66,10 +67,12 @@ void Application::Run()
             cout << "s - Start processing" << endl
                  << "g - Show/hide GUI" << endl
                  << "r - Change resolution" << endl
+                 << "c - Change camera" << endl
                  << "b - Create new backgound subtractor" << endl
                  << "q - Quit" << endl
                  << ">>";
 
+            unsigned int camera_number = 0;
             int history = 0;
             float threshold = 0;
             char key;
@@ -90,6 +93,11 @@ void Application::Run()
                 break;
             case 'r':
                 handleResolution();
+                break;
+            case 'c':
+                cout << "Input camera number: ";
+                cin >> camera_number;
+                mVideoProcessor.SetCamera(camera_number);
                 break;
             case 'b':
                 cout << "Input history: ";
