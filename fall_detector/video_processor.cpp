@@ -102,12 +102,12 @@ void VideoProcessor::RunWithGui()
             if(mObjectFound)
                 ellipse(mOriginalFrame, mEllipse, Scalar(0, 255, 0), 2);
 
-//            if(mIntervalProcessor.FallDetected())
-//                putText(mOriginalFrame, "Fall detected", Point(0, 0), 1, 1,
-//                        Scalar(0, 255, 0), 2);
-//            else
-//                putText(mOriginalFrame, "Stable condition", Point(0, 0), 1, 1,
-//                        Scalar(255, 0, 0), 2);
+            if(mIntervalProcessor.FallDetected())
+                putText(mOriginalFrame, "Fall detected", Point(0, 0), 1, 1,
+                        Scalar(0, 255, 0), 2);
+            else
+                putText(mOriginalFrame, "Stable condition", Point(0, 0), 1, 1,
+                        Scalar(255, 0, 0), 2);
 
             imshow(name_original_frame, mOriginalFrame);
             imshow(name_foreground_mask, mForegroundMask);
