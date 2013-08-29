@@ -68,10 +68,13 @@ linux-g++ {
 }
 
 linux-rasp-pi-g++ {
-    INCLUDEPATH += /usr/local/include \
-        /usr/include
+    QMAKE_RPATHDIR += /home/gromchen/rpi/usr/lib \
+        /home/gromchen/rpi/usr/lib/arm-linux-gnueabihf \
+        /home/gromchen/rpi/usr/local/lib
 
-    LIBS += -L/usr/lib \
+    INCLUDEPATH += /home/gromchen/rpi/include
+
+    LIBS += -L/home/gromchen/rpi/usr/lib \
         -lopencv_highgui \
         -lopencv_core \
         -lopencv_features2d \
@@ -79,10 +82,11 @@ linux-rasp-pi-g++ {
         -lopencv_video \
         -lopencv_imgproc
 
-    LIBS += -L/usr/local/lib \
+    LIBS += -L/home/gromchen/rpi/usr/local/lib \
+        -lboost_system \
         -lboost_thread \
         -lboost_chrono
 
-     target.path = ./
+     target.path = ./Qt_deploy/
      INSTALLS += target
 }
