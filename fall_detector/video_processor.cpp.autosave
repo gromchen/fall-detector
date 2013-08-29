@@ -241,12 +241,8 @@ double VideoProcessor::calculateCoefficientOfMotion(Mat &silhouette,
 
     double c_motion = 0;
 
-    if(number_of_history_pixels > number_of_blob_pixels
-            && number_of_blob_pixels > 0)
-    {
-        c_motion = (number_of_history_pixels - number_of_blob_pixels)
-                / number_of_blob_pixels;
-    }
+    if(number_of_history_pixels > number_of_blob_pixels && number_of_blob_pixels > 0)
+        c_motion = (number_of_history_pixels - number_of_blob_pixels) / number_of_blob_pixels;
 
 //    cout << number_of_history_pixels << " "
 //         << number_of_blob_pixels << " "

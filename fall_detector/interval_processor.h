@@ -18,7 +18,7 @@ public:
     void IncludeObject(FallDetector::FrameData frameData);
     bool FallDetected() { return mFiniteStateMachine.FallDetected(); }
 
-private:
+private:    
     FallDetector::DataCollector mDataCollector;
     boost::chrono::high_resolution_clock::time_point mTimeOfPreviousSecond;
     std::vector<FrameData> mFrameDataCollection;

@@ -48,14 +48,18 @@ void DataCollector::writeToFile(string fileName, vector<IntervalData> data)
 
         if(data[iData].GetNumberOfFoundObjects() > 0)
         {
-            file_stream << data[iData].GetStandardDeviationOfOrientation() << ","
-                        << data[iData].GetStandardDeviationOfRatio() << ","
+            Features features = data[iData].GetFeatures();
+            file_stream << features.GetCoefficientOfMotion().GetStandardDeviation() << ","
+                        << features.GetOrientation().GetStandardDeviation() << ","
+                        << features.GetRatio().GetStandardDeviation() << ","
+                        << features.GetPositionX().GetStandardDeviation() << ","
+                        << features.GetPositionY().GetStandardDeviation() << ","
+                        << features.GetAxisA().GetStandardDeviation() << ","
+                        << features.GetAxisB().GetStandardDeviation() << ","
                         << data[iData].GetNumberOfFoundObjects() << endl;
         }
         else
-        {
             file_stream << "," << "," << data[iData].GetNumberOfFoundObjects() << endl;
-        }
     }
 
     file_stream.close();

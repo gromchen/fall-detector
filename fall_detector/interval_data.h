@@ -3,26 +3,25 @@
 
 #include <boost/date_time.hpp>
 
+#include "helpers.h"
+#include "features.h"
+
 namespace FallDetector
 {
 class IntervalData
 {
 public:
-    IntervalData(boost::posix_time::ptime currentTime, double fps, double standardDeviatioinOfOrientation,
-              double standardDeviationOfRatio, int numberOfFoundObjects);
+    IntervalData(boost::posix_time::ptime currentTime, double fps, Features features);
 
     boost::posix_time::ptime GetCurrentTime() { return mCurrentTime; }
     double GetFps() { return mFps; }
-    float GetStandardDeviationOfOrientation() { return mStandardDeviationOfOrientation; }
-    float GetStandardDeviationOfRatio() { return mStandardDeviationOfRatio; }
-    int GetNumberOfFoundObjects() { return mNumberOfFoundObjects; }
+    Features GetFeatures() { return mFeatures; }
+    int GetNumberOfFoundObjects() { return mFeatures.GetNumberOfSummands(); }
 
 private:
     boost::posix_time::ptime mCurrentTime;
     double mFps;
-    float mStandardDeviationOfOrientation;
-    float mStandardDeviationOfRatio;
-    int mNumberOfFoundObjects;
+    Features mFeatures;
 };
 }
 #endif // VIDEO_DATA_H

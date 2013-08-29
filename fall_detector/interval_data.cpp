@@ -2,16 +2,10 @@
 
 namespace FallDetector
 {
-IntervalData::IntervalData(boost::posix_time::ptime currentTime,
-                     double fps,
-                     double standardDeviatioinOfOrientation,
-                     double standardDeviationOfRatio,
-                     int numberOfFoundObjects)
+IntervalData::IntervalData(boost::posix_time::ptime currentTime, double fps, Features features)
 {
     mCurrentTime = currentTime;
     mFps = fps;
-    mStandardDeviationOfOrientation = standardDeviatioinOfOrientation;
-    mStandardDeviationOfRatio = standardDeviationOfRatio;
-    mNumberOfFoundObjects = numberOfFoundObjects;
+    mFeatures = features;
 }
 }
