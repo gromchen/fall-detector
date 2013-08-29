@@ -13,7 +13,7 @@ namespace FallDetector
 {
 VideoProcessor::VideoProcessor()
 {
-    mCameraNumber = 1;
+    mCameraNumber = 0;
     mFrameWidth = 320;
     mFrameHeight = 240;
 

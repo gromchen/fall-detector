@@ -53,7 +53,21 @@ win32 {
         -lboost_system-mgw47-d-1_54
 }
 
-unix {
+linux-g++ {
+    INCLUDEPATH += /usr/local/include
+
+    LIBS += -L/usr/local/lib \
+        -lboost_thread \
+        -lboost_chrono \
+        -lopencv_highgui \
+        -lopencv_core \
+        -lopencv_features2d \
+        -lopencv_calib3d \
+        -lopencv_video \
+        -lopencv_imgproc
+}
+
+linux-rasp-pi-g++ {
     INCLUDEPATH += /usr/local/include \
         /usr/include
 
@@ -68,4 +82,7 @@ unix {
     LIBS += -L/usr/local/lib \
         -lboost_thread \
         -lboost_chrono
+
+     target.path = ./
+     INSTALLS += target
 }
