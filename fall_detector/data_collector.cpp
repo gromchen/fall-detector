@@ -37,8 +37,13 @@ void DataCollector::CollectData(IntervalData intervalData)
 void DataCollector::writeToFile(string fileName, vector<IntervalData> data)
 {
     ofstream file_stream;
+    ofstream file_stream_for_frames;
+
     mFileMutex.lock();
+
     file_stream.open(fileName.c_str(), ios_base::app);
+    file_stream_for_frames.open(("frames_" + fileName).c_str(), ios_base::app);
+
     unsigned int data_size = data.size();
 
     for(unsigned int iData = 0; iData < data_size; iData++)
@@ -88,11 +93,31 @@ void DataCollector::writeToFile(string fileName, vector<IntervalData> data)
             file_stream << state << endl;
         }
         else
+        {
             file_stream << "," << "," << "," << "," << "," << "," << ","
                         << data[iData].GetNumberOfFoundObjects() << "," << endl;
+        }
+
+        unsigned int frames_size = data[iData].GetAngles().size();
+        std::vector<optional<double> > frames = data[iData].GetAngles();
+
+        for(unsigned int i_frame = 0; i_frame < frames_size; i_frame++)
+        {
+            optional<double> angle = frames[i_frame];
+
+            if(angle)
+            {
+            file_stream_for_frames << angle.get() << endl;
+            }
+            else
+            {
+                file_stream_for_frames << endl;
+            }
+        }
     }
 
     file_stream.close();
+    file_stream_for_frames.close();
     mFileMutex.unlock();
 }
 

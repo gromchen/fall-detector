@@ -2,6 +2,7 @@
 
 #include "interval_data.h"
 
+using namespace boost;
 using namespace boost::chrono;
 using namespace cv;
 using namespace FallDetector;
@@ -26,16 +27,25 @@ void IntervalProcessor::IncludeObject(FrameData frameData)
     if(number_of_milliseconds >= 1000)
     {
         Parameters features;
+        std::vector<optional<double> > angles;
         unsigned int frame_data_size = mFrameDataCollection.size();
 
         for(unsigned int iEllipse = 0; iEllipse < frame_data_size; iEllipse++)
+        {
             if(mFrameDataCollection[iEllipse].ObjectFound())
             {
                 RotatedRect object = mFrameDataCollection[iEllipse].GetObject();
                 features.AddSummands(frameData.GetCoefficientOfMotion(), object.angle,
                                      object.size.height / object.size.width, object.center.x,
                                      object.center.y, object.size.height, object.size.width);
+
+                angles.push_back(optional<double>(object.angle));
             }
+            else
+            {
+                angles.push_back(optional<double>());
+            }
+        }
 
         if(features.GetNumberOfSummands() > 0)
             features.CalculateStandardDeviation();
@@ -80,7 +90,8 @@ void IntervalProcessor::IncludeObject(FrameData frameData)
 
         mDataCollector.CollectData(IntervalData(boost::posix_time::microsec_clock::local_time(),
                                                 fps, features, mFiniteStateMachine.FallDetected(),
-                                                mFiniteStateMachine.GetState()));
+                                                mFiniteStateMachine.GetState(),
+                                                angles));
     }
 }
 

@@ -56,7 +56,7 @@ private:
     cv::RotatedRect mEllipse;
     bool mObjectFound;
     static const unsigned int mcMaxNumberOfObjects = 50;
-    static const unsigned int mcMinAreaOfObject = 20*20;
+    static const unsigned int mcMinAreaOfObject = 40*40;
     int mMaxAreaOfObject;
 
     FallDetector::IntervalProcessor mIntervalProcessor;
