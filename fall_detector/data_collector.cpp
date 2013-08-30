@@ -56,10 +56,40 @@ void DataCollector::writeToFile(string fileName, vector<IntervalData> data)
                         << features.GetPositionY().GetStandardDeviation() << ","
                         << features.GetAxisA().GetStandardDeviation() << ","
                         << features.GetAxisB().GetStandardDeviation() << ","
-                        << data[iData].GetNumberOfFoundObjects() << endl;
+                        << data[iData].GetNumberOfFoundObjects() << ",";
+
+            string state = "";
+
+            if(data[iData].FallDetected())
+            {
+                state = "Fall detected";
+            }
+            else
+            {
+                switch (data[iData].GetState())
+                {
+                case STANDING:
+                    state = "Standing";
+                    break;
+                case WALKING:
+                    state = "Walking";
+                    break;
+                case FALLING:
+                    state = "Falling";
+                    break;
+                case LYING:
+                    state = "Lying";
+                    break;
+                default:
+                    break;
+                }
+            }
+
+            file_stream << state << endl;
         }
         else
-            file_stream << "," << "," << data[iData].GetNumberOfFoundObjects() << endl;
+            file_stream << "," << "," << "," << "," << "," << "," << "," << ","
+                        << data[iData].GetNumberOfFoundObjects() << endl;
     }
 
     file_stream.close();

@@ -53,6 +53,8 @@ void VideoProcessor::RunWithoutGui()
     {
         if(mVideoCapture.isOpened())
             mVideoCapture.release();
+
+        mIntervalProcessor.Reset();
     }
 }
 
@@ -103,11 +105,31 @@ void VideoProcessor::RunWithGui()
                 ellipse(mOriginalFrame, mEllipse, Scalar(0, 255, 0), 2);
 
             if(mIntervalProcessor.FallDetected())
-                putText(mOriginalFrame, "Fall detected", Point(0, 20), 1, 1,
-                        Scalar(0, 255, 0), 2);
+                putText(mOriginalFrame, "Fall detected", Point(0, 20), 1, 1, Scalar(0, 255, 0), 2);
             else
-                putText(mOriginalFrame, "Stable condition", Point(0, 20), 1, 1,
-                        Scalar(255, 0, 0), 2);
+            {
+                string state = "";
+
+                switch (mIntervalProcessor.HumanState())
+                {
+                case STANDING:
+                    state = "Standing";
+                    break;
+                case WALKING:
+                    state = "Walking";
+                    break;
+                case FALLING:
+                    state = "Falling";
+                    break;
+                case LYING:
+                    state = "LYING";
+                    break;
+                default:
+                    break;
+                }
+
+                putText(mOriginalFrame, state, Point(0, 20), 1, 1, Scalar(255, 0, 0), 2);
+            }
 
             imshow(name_original_frame, mOriginalFrame);
             imshow(name_foreground_mask, mForegroundMask);
@@ -125,6 +147,8 @@ void VideoProcessor::RunWithGui()
 
         if(mVideoCapture.isOpened())
             mVideoCapture.release();
+
+        mIntervalProcessor.Reset();
     }
 }
 
@@ -241,16 +265,12 @@ double VideoProcessor::calculateCoefficientOfMotion(Mat &silhouette,
 
     double c_motion = 0;
 
-    if(number_of_history_pixels > number_of_blob_pixels
-            && number_of_blob_pixels > 0)
-    {
-        c_motion = (number_of_history_pixels - number_of_blob_pixels)
-                / number_of_blob_pixels;
-    }
+    if(number_of_history_pixels > number_of_blob_pixels && number_of_blob_pixels > 0)
+        c_motion = (number_of_history_pixels - number_of_blob_pixels) / number_of_blob_pixels;
 
-//    cout << number_of_history_pixels << " "
-//         << number_of_blob_pixels << " "
-//         << c_motion << endl;
+    //    cout << number_of_history_pixels << " "
+    //         << number_of_blob_pixels << " "
+    //         << c_motion << endl;
 
     return c_motion;
 }

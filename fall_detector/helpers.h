@@ -13,6 +13,14 @@ std::string ToString(T object)
     ss << object;
     return ss.str();
 }
+
+enum HumanStateType
+{
+    STANDING,
+    WALKING,
+    FALLING,
+    LYING
+};
 }
 
 #endif // HELPERS_H

@@ -16,7 +16,10 @@ public:
 
     void StartTracking();
     void IncludeObject(FallDetector::FrameData frameData);
+    void Reset();
+
     bool FallDetected() { return mFiniteStateMachine.FallDetected(); }
+    HumanStateType HumanState() { return mFiniteStateMachine.GetState(); }
 
 private:    
     FallDetector::DataCollector mDataCollector;

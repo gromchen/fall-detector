@@ -41,6 +41,7 @@ void IntervalProcessor::IncludeObject(FrameData frameData)
             features.CalculateStandardDeviation();
 
         // Determination of the fall
+        // TODO: coefficient of motion
         if(features.GetOrientation().GetStandardDeviation() > 15
                 || features.GetRatio().GetStandardDeviation() > 0.9)
         {
@@ -48,7 +49,28 @@ void IntervalProcessor::IncludeObject(FrameData frameData)
         }
         else
         {
-            mFiniteStateMachine.Walk();
+            // TODO: && not working
+            if(features.GetPositionX().GetStandardDeviation() <= 2
+                    || features.GetPositionY().GetStandardDeviation() <= 2
+                    || features.GetAxisA().GetStandardDeviation() <= 2
+                    || features.GetAxisB().GetStandardDeviation() <= 2)
+            {
+                if(mFiniteStateMachine.GetState() == STANDING || mFiniteStateMachine.GetState() == WALKING)
+                {
+                    mFiniteStateMachine.Stand();
+                }
+                else
+                {
+                    if(mFiniteStateMachine.GetState() == FALLING || mFiniteStateMachine.GetState() == LYING)
+                    {
+                        mFiniteStateMachine.Lie();
+                    }
+                }
+            }
+            else
+            {
+                mFiniteStateMachine.Walk();
+            }
         }
 
         // Data collection
@@ -57,8 +79,13 @@ void IntervalProcessor::IncludeObject(FrameData frameData)
         mTimeOfPreviousSecond = current_time;
 
         mDataCollector.CollectData(IntervalData(boost::posix_time::microsec_clock::local_time(),
-                                                fps,
-                                                features));
+                                                fps, features, mFiniteStateMachine.FallDetected(),
+                                                mFiniteStateMachine.GetState()));
     }
+}
+
+void IntervalProcessor::Reset()
+{
+    mFiniteStateMachine.Reset();
 }
 }

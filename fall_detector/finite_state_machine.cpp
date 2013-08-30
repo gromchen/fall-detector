@@ -8,9 +8,15 @@ namespace FallDetector
 {
 FiniteStateMachine::FiniteStateMachine()
 {
-    mState = WALKING;
+    mState = STANDING;
     mFallCount = 0;
     mFallDetected = false;
+}
+
+void FiniteStateMachine::Stand()
+{
+    if(mState != STANDING)
+        mState = STANDING;
 }
 
 void FiniteStateMachine::Walk()
@@ -21,8 +27,8 @@ void FiniteStateMachine::Walk()
 
 void FiniteStateMachine::Fall()
 {
-    if(mState == LYING)
-        throw runtime_error("Fall error");
+    //if(mState == LYING)
+    //  throw runtime_error("Fall error");
 
     if(mState != FALLING)
         mState = FALLING;
@@ -30,8 +36,8 @@ void FiniteStateMachine::Fall()
 
 void FiniteStateMachine::Lie()
 {
-    if(mState == WALKING)
-        throw runtime_error("Lie error");
+    //if(mState == WALKING)
+    //    throw runtime_error("Lie error");
 
     if(mState != LYING)
         mState = LYING;
@@ -40,5 +46,12 @@ void FiniteStateMachine::Lie()
 
     if(mFallCount >= 5)
         mFallDetected = true;
+}
+
+void FiniteStateMachine::Reset()
+{
+    mState = STANDING;
+    mFallCount = 0;
+    mFallDetected = false;
 }
 }
