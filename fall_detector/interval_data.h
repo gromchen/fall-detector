@@ -4,19 +4,19 @@
 #include <boost/date_time.hpp>
 
 #include "helpers.h"
-#include "features.h"
+#include "parameters.h"
 
 namespace FallDetector
 {
 class IntervalData
 {
 public:
-    IntervalData(boost::posix_time::ptime currentTime, double fps, Features features, bool fallDetected,
+    IntervalData(boost::posix_time::ptime currentTime, double fps, Parameters features, bool fallDetected,
                  HumanStateType state);
 
     boost::posix_time::ptime GetCurrentTime() { return mCurrentTime; }
     double GetFps() { return mFps; }
-    Features GetFeatures() { return mFeatures; }
+    Parameters GetFeatures() { return mFeatures; }
     int GetNumberOfFoundObjects() { return mFeatures.GetNumberOfSummands(); }
     bool FallDetected() { return mFallDetected; }
     HumanStateType GetState() { return mState; }
@@ -24,7 +24,7 @@ public:
 private:
     boost::posix_time::ptime mCurrentTime;
     double mFps;
-    Features mFeatures;
+    Parameters mFeatures;
     bool mFallDetected;
     HumanStateType mState;
 };

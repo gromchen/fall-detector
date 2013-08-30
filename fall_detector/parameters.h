@@ -5,10 +5,10 @@
 
 namespace FallDetector
 {
-class Features
+class Parameters
 {
 public:
-    Features();
+    Parameters();
 
     void AddSummands(double coefficientOfMotion, double orientation, double ratio, double positionX, double positionY,
                      double axisA, double axisB);

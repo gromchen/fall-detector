@@ -24,7 +24,7 @@ SOURCES += main.cpp \
     interval_data.cpp \
     finite_state_machine.cpp \
     feature.cpp \
-    features.cpp
+    parameters.cpp
 
 HEADERS += \
     application.h \
@@ -36,7 +36,7 @@ HEADERS += \
     interval_data.h \
     finite_state_machine.h \
     feature.h \
-    features.h
+    parameters.h
 
 win32 {
     INCLUDEPATH += $(OPENCV_DIR)\include \

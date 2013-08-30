@@ -25,7 +25,7 @@ void IntervalProcessor::IncludeObject(FrameData frameData)
 
     if(number_of_milliseconds >= 1000)
     {
-        Features features;
+        Parameters features;
         unsigned int frame_data_size = mFrameDataCollection.size();
 
         for(unsigned int iEllipse = 0; iEllipse < frame_data_size; iEllipse++)
@@ -42,7 +42,7 @@ void IntervalProcessor::IncludeObject(FrameData frameData)
 
         // Determination of the fall
         // TODO: coefficient of motion
-        if(features.GetOrientation().GetStandardDeviation() > 90 // 15
+        if(features.GetOrientation().GetStandardDeviation() > 15
                 || features.GetRatio().GetStandardDeviation() > 0.9)
         {
             mFiniteStateMachine.Fall();

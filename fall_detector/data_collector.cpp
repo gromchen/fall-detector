@@ -48,7 +48,7 @@ void DataCollector::writeToFile(string fileName, vector<IntervalData> data)
 
         if(data[iData].GetNumberOfFoundObjects() > 0)
         {
-            Features features = data[iData].GetFeatures();
+            Parameters features = data[iData].GetFeatures();
             file_stream << features.GetCoefficientOfMotion().GetStandardDeviation() << ","
                         << features.GetOrientation().GetStandardDeviation() << ","
                         << features.GetRatio().GetStandardDeviation() << ","

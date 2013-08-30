@@ -2,7 +2,7 @@
 
 namespace FallDetector
 {
-IntervalData::IntervalData(boost::posix_time::ptime currentTime, double fps, Features features, bool fallDetected,
+IntervalData::IntervalData(boost::posix_time::ptime currentTime, double fps, Parameters features, bool fallDetected,
                            HumanStateType state)
 {
     mCurrentTime = currentTime;

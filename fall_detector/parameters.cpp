@@ -1,8 +1,8 @@
-#include "features.h"
+#include "parameters.h"
 
 namespace FallDetector
 {
-Features::Features()
+Parameters::Parameters()
 {
     for(unsigned int iFeature = 0; iFeature < mcsNumberOfFeatures; iFeature++)
         mFeatures.push_back(Feature());
@@ -10,7 +10,7 @@ Features::Features()
     mNumberOfSummands = 0;
 }
 
-void Features::AddSummands(double coefficientOfMotion, double orientation, double ratio, double positionX,
+void Parameters::AddSummands(double coefficientOfMotion, double orientation, double ratio, double positionX,
                            double positionY, double axisA, double axisB)
 {
     mFeatures[0].AddSummand(coefficientOfMotion);
@@ -24,7 +24,7 @@ void Features::AddSummands(double coefficientOfMotion, double orientation, doubl
     mNumberOfSummands++;
 }
 
-void Features::CalculateStandardDeviation()
+void Parameters::CalculateStandardDeviation()
 {
     for(unsigned int iFeature = 0; iFeature < mcsNumberOfFeatures; iFeature++)
     {
