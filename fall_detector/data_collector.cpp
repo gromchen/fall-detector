@@ -88,8 +88,8 @@ void DataCollector::writeToFile(string fileName, vector<IntervalData> data)
             file_stream << state << endl;
         }
         else
-            file_stream << "," << "," << "," << "," << "," << "," << "," << ","
-                        << data[iData].GetNumberOfFoundObjects() << endl;
+            file_stream << "," << "," << "," << "," << "," << "," << ","
+                        << data[iData].GetNumberOfFoundObjects() << "," << endl;
     }
 
     file_stream.close();

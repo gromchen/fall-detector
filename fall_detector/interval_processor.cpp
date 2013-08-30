@@ -42,7 +42,7 @@ void IntervalProcessor::IncludeObject(FrameData frameData)
 
         // Determination of the fall
         // TODO: coefficient of motion
-        if(features.GetOrientation().GetStandardDeviation() > 15
+        if(features.GetOrientation().GetStandardDeviation() > 90 // 15
                 || features.GetRatio().GetStandardDeviation() > 0.9)
         {
             mFiniteStateMachine.Fall();
