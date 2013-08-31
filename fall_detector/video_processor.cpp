@@ -37,7 +37,9 @@ void VideoProcessor::RunWithoutGui()
     try
     {
         if (!mVideoCapture.open(mCameraNumber))
+        {
             throw runtime_error("Could not open video device");
+        }
 
         mVideoCapture.set(CV_CAP_PROP_FRAME_WIDTH, mFrameWidth);
         mVideoCapture.set(CV_CAP_PROP_FRAME_HEIGHT, mFrameHeight);
@@ -47,12 +49,16 @@ void VideoProcessor::RunWithoutGui()
         mIntervalProcessor.StartTracking();
 
         while (true)
-            processFrame();
+        {
+            ProcessFrame();
+        }
     }
     catch(thread_interrupted&)
     {
         if(mVideoCapture.isOpened())
+        {
             mVideoCapture.release();
+        }
 
         mIntervalProcessor.Reset();
     }
@@ -63,7 +69,9 @@ void VideoProcessor::RunWithGui()
     try
     {
         if (!mVideoCapture.open(mCameraNumber))
+        {
             throw runtime_error("Could not open video device");
+        }
 
         mVideoCapture.set(CV_CAP_PROP_FRAME_WIDTH, mFrameWidth);
         mVideoCapture.set(CV_CAP_PROP_FRAME_HEIGHT, mFrameHeight);
@@ -99,18 +107,22 @@ void VideoProcessor::RunWithGui()
 
         while (true)
         {
-            processFrame();
+            ProcessFrame();
 
             if(mObjectFound)
-                ellipse(mOriginalFrame, mEllipse, Scalar(0, 255, 0), 2);
+            {
+                ellipse(mOriginalFrame, mRotatedRectangle, Scalar(0, 255, 0), 2);
+            }
 
-            if(mIntervalProcessor.FallDetected())
+            if(mIntervalProcessor.IsFallDetected())
+            {
                 putText(mOriginalFrame, "Fall detected", Point(0, 20), 1, 1, Scalar(0, 255, 0), 2);
+            }
             else
             {
                 string state = "";
 
-                switch (mIntervalProcessor.HumanState())
+                switch (mIntervalProcessor.GetHumanState())
                 {
                 case STANDING:
                     state = "Standing";
@@ -146,7 +158,9 @@ void VideoProcessor::RunWithGui()
         destroyAllWindows();
 
         if(mVideoCapture.isOpened())
+        {
             mVideoCapture.release();
+        }
 
         mIntervalProcessor.Reset();
     }
@@ -158,7 +172,7 @@ void VideoProcessor::SetResolution(int width, int height)
     mFrameHeight = height;
 }
 
-std::string VideoProcessor::PrintResolution()
+std::string VideoProcessor::GetResolution()
 {
     return ToString(mFrameWidth) + "x" + ToString(mFrameHeight);
 }
@@ -172,7 +186,7 @@ void VideoProcessor::CreateNewBackgroundSubtractor(int history,
     mpBackgroundSubtractor = new BackgroundSubtractorMOG2(mHistory, mThreshold);
 }
 
-void VideoProcessor::processFrame()
+void VideoProcessor::ProcessFrame()
 {
     this_thread::interruption_point();
 
@@ -202,21 +216,21 @@ void VideoProcessor::processFrame()
 
     // Object detection
     mObjectFound = false;
-    mEllipse = RotatedRect();
+    mRotatedRectangle = RotatedRect();
 
     if(hierarchy.size() > 0 && hierarchy.size() < mcMaxNumberOfObjects)
     {
         double reference_area = 0;
 
-        for(int iContour = 0; iContour >= 0; iContour = hierarchy[iContour][0])
+        for(int i_contour = 0; i_contour >= 0; i_contour = hierarchy[i_contour][0])
         {
-            Moments object_moments = moments(Mat(contours[iContour]));
+            Moments object_moments = moments(Mat(contours[i_contour]));
             double area = object_moments.m00;
 
             if(area > mcMinAreaOfObject && area < mMaxAreaOfObject && area > reference_area
-               && contours[iContour].size() > 5)
+               && contours[i_contour].size() > 5)
             {
-                mEllipse = fitEllipse(Mat(contours[iContour]));
+                mRotatedRectangle = fitEllipse(Mat(contours[i_contour]));
                 mObjectFound = true;
                 reference_area = area;
             }
@@ -227,28 +241,25 @@ void VideoProcessor::processFrame()
 
     if(mObjectFound)
     {
-        c_motion = calculateCoefficientOfMotion(mDilateMask, mMhiMask);
+        c_motion = CalculateCoefficientOfMotion(mDilateMask, mMhiMask);
     }
 
-    mIntervalProcessor.IncludeObject(FrameData(c_motion, mEllipse, mObjectFound));
+    mIntervalProcessor.Include(FrameInfo(c_motion, mRotatedRectangle, mObjectFound));
 }
 
-double VideoProcessor::calculateCoefficientOfMotion(Mat &silhouette, Mat &mhiMask)
+double VideoProcessor::CalculateCoefficientOfMotion(Mat &silhouette, Mat &mhiMask)
 {
     updateMotionHistory(silhouette, mhiMask, (double)clock()/CLOCKS_PER_SEC, 1);
-
-    unsigned int number_of_rows = mhiMask.rows;
-    unsigned int number_of_columns = mhiMask.cols;
 
     double number_of_blob_pixels = 0;
     double number_of_history_pixels = 0;
 
-    for(unsigned int i_row = 0; i_row < number_of_rows; i_row++)
+    for(int i_row = 0; i_row < mhiMask.rows; i_row++)
     {
         unsigned char* foreground_data = silhouette.ptr(i_row);
         unsigned char* mhi_data = mhiMask.ptr(i_row);
 
-        for(unsigned int i_column = 0; i_column < number_of_columns; i_column++)
+        for(int i_column = 0; i_column < mhiMask.cols; i_column++)
         {
             if(mhi_data[i_column] > 0)
             {

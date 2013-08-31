@@ -1,15 +1,15 @@
-#include "frame_data.h"
+#include "frame_info.h"
 
 using namespace cv;
 
 namespace FallDetector
 {
-FrameData::FrameData(double coefficientOfMotion,
-                     cv::RotatedRect object,
+FrameInfo::FrameInfo(double coefficientOfMotion,
+                     cv::RotatedRect rotatedRectangle,
                      bool objectFound)
 {
     mCoefficientOfMotion = coefficientOfMotion;
-    mObject = object;
+    mRotatedRectangle = rotatedRectangle;
     mObjectFound = objectFound;
 }
 }

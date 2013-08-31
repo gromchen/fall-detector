@@ -1,5 +1,5 @@
-#ifndef HELPERS_H
-#define HELPERS_H
+#ifndef FALL_DETECTOR_HELPERS_H
+#define FALL_DETECTOR_HELPERS_H
 
 #include <string>
 #include <sstream>
@@ -9,12 +9,12 @@ namespace FallDetector
 template<typename T>
 std::string ToString(T object)
 {
-    std::stringstream ss;
-    ss << object;
-    return ss.str();
+    std::stringstream string_stream;
+    string_stream << object;
+    return string_stream.str();
 }
 
-enum HumanStateType
+enum HumanState
 {
     STANDING,
     WALKING,
@@ -23,4 +23,4 @@ enum HumanStateType
 };
 }
 
-#endif // HELPERS_H
+#endif // FALL_DETECTOR_HELPERS_H

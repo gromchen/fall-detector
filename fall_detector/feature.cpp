@@ -10,7 +10,7 @@ Feature::Feature()
     mStandardDeviation = 0;
 }
 
-void Feature::AddSummand(double summand)
+void Feature::Add(double summand)
 {
     mSummands.push_back(summand);
     mSum += summand;
@@ -18,16 +18,16 @@ void Feature::AddSummand(double summand)
 
 void Feature::CalculateStandardDeviation()
 {
-    unsigned int summandsSize = mSummands.size();
+    unsigned int size_of_summands = mSummands.size();
 
-    double average = mSum / summandsSize;
-    double meanSquareSum = 0;
+    double average = mSum / size_of_summands;
+    double mean_square_sum = 0;
 
-    for(unsigned int iSummand = 0; iSummand < summandsSize; iSummand++)
+    for(unsigned int i_summand = 0; i_summand < size_of_summands; i_summand++)
     {
-        meanSquareSum += pow(mSummands[iSummand] - average, 2);
+        mean_square_sum += pow(mSummands[i_summand] - average, 2);
     }
 
-    mStandardDeviation = sqrt(meanSquareSum / summandsSize);
+    mStandardDeviation = sqrt(mean_square_sum / size_of_summands);
 }
 }

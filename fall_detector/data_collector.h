@@ -1,10 +1,10 @@
-#ifndef DATA_COLLECTOR_H
-#define DATA_COLLECTOR_H
+#ifndef FALL_DETECTOR_DATA_COLLECTOR_H
+#define FALL_DETECTOR_DATA_COLLECTOR_H
 
 #include <vector>
 #include <boost/thread.hpp>
 
-#include "interval_data.h"
+#include "interval_info.h"
 
 namespace FallDetector
 {
@@ -14,16 +14,16 @@ public:
     DataCollector();
     ~DataCollector();
 
-    void CollectData(IntervalData intervalData);
+    void Collect(IntervalInfo intervalInfo);
 
 private:
-    void writeToFile(std::string fileName, std::vector<IntervalData> data);
-    void joinAllWriteThreads();
+    void Write(std::string fileName, std::vector<IntervalInfo> intervalInfos);
+    void JoinAllWriteThreads();
 
-    std::vector<IntervalData> mData;
+    std::vector<IntervalInfo> mIntervalInfos;
     std::vector<boost::thread*> mWriteThreads;
     boost::mutex mFileMutex;
 };
 }
 
-#endif // DATA_COLLECTOR_H
+#endif // FALL_DETECTOR_DATA_COLLECTOR_H

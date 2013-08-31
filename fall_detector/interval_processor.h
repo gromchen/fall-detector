@@ -1,10 +1,10 @@
-#ifndef INTERVAL_PROCESSOR_H
-#define INTERVAL_PROCESSOR_H
+#ifndef FALL_DETECTOR_INTERVAL_PROCESSOR_H
+#define FALL_DETECTOR_INTERVAL_PROCESSOR_H
 
 #include <boost/chrono.hpp>
 
 #include "data_collector.h"
-#include "frame_data.h"
+#include "frame_info.h"
 #include "finite_state_machine.h"
 
 namespace FallDetector
@@ -15,18 +15,18 @@ public:
     IntervalProcessor();
 
     void StartTracking();
-    void IncludeObject(FallDetector::FrameData frameData);
+    void Include(FrameInfo frameInfo);
     void Reset();
 
-    bool FallDetected() { return mFiniteStateMachine.FallDetected(); }
-    HumanStateType HumanState() { return mFiniteStateMachine.GetState(); }
+    bool IsFallDetected() { return mFiniteStateMachine.IsFallDetected(); }
+    HumanState GetHumanState() { return mFiniteStateMachine.GetHumanState(); }
 
 private:    
-    FallDetector::DataCollector mDataCollector;
+    DataCollector mDataCollector;
     boost::chrono::high_resolution_clock::time_point mTimeOfPreviousSecond;
-    std::vector<FrameData> mFrameDataCollection;
+    std::vector<FrameInfo> mFrameInfos;
     FiniteStateMachine mFiniteStateMachine;
 };
 }
 
-#endif // INTERVAL_PROCESSOR_H
+#endif // FALL_DETECTOR_INTERVAL_PROCESSOR_H

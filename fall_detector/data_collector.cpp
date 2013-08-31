@@ -16,62 +16,67 @@ DataCollector::DataCollector()
 
 DataCollector::~DataCollector()
 {
-    joinAllWriteThreads();
+    JoinAllWriteThreads();
 }
 
-void DataCollector::CollectData(IntervalData intervalData)
+void DataCollector::Collect(IntervalInfo intervalInfo)
 {
-    mData.push_back(intervalData);
+    mIntervalInfos.push_back(intervalInfo);
 
-    if(mData.size() >= 10)
+    if(mIntervalInfos.size() >= 10)
     {
         if(mWriteThreads.size() >= 100)
-            joinAllWriteThreads();
+        {
+            JoinAllWriteThreads();
+        }
 
-        string date = ToString(posix_time::second_clock::local_time().date());
-        mWriteThreads.push_back(new thread(&DataCollector::writeToFile, this, "data (" + date + ").csv", mData));
-        mData.clear();
+        string date_string = ToString(posix_time::second_clock::local_time().date());
+        mWriteThreads.push_back(new thread(&DataCollector::Write,
+                                           this,
+                                           "data (" + date_string + ").csv",
+                                           mIntervalInfos));
+        mIntervalInfos.clear();
     }
 }
 
-void DataCollector::writeToFile(string fileName, vector<IntervalData> data)
+void DataCollector::Write(string fileName, std::vector<IntervalInfo> intervalInfos)
 {
-    ofstream file_stream;
-    ofstream file_stream_for_frames;
+    ofstream file_stream_for_parameters;
+    ofstream file_stream_for_angles;
 
     mFileMutex.lock();
 
-    file_stream.open(fileName.c_str(), ios_base::app);
-    file_stream_for_frames.open(("frames_" + fileName).c_str(), ios_base::app);
+    file_stream_for_parameters.open(fileName.c_str(), ios_base::app);
+    file_stream_for_angles.open(("frames_" + fileName).c_str(), ios_base::app);
 
-    unsigned int data_size = data.size();
-
-    for(unsigned int iData = 0; iData < data_size; iData++)
+    for(unsigned int i_interval_info = 0; i_interval_info < intervalInfos.size(); i_interval_info++)
     {
-        file_stream << data[iData].GetCurrentTime().time_of_day() << ","
-                    << data[iData].GetFps() << ",";
+        IntervalInfo interval_info = intervalInfos[i_interval_info];
 
-        if(data[iData].GetNumberOfFoundObjects() > 0)
+        file_stream_for_parameters << interval_info.GetCurrentTime().time_of_day() << ","
+                                   << interval_info.GetFps() << ",";
+
+        if(interval_info.GetNumberOfFoundObjects() > 0)
         {
-            Parameters features = data[iData].GetFeatures();
-            file_stream << features.GetCoefficientOfMotion().GetStandardDeviation() << ","
-                        << features.GetOrientation().GetStandardDeviation() << ","
-                        << features.GetRatio().GetStandardDeviation() << ","
-                        << features.GetPositionX().GetStandardDeviation() << ","
-                        << features.GetPositionY().GetStandardDeviation() << ","
-                        << features.GetAxisA().GetStandardDeviation() << ","
-                        << features.GetAxisB().GetStandardDeviation() << ","
-                        << data[iData].GetNumberOfFoundObjects() << ",";
+            FeatureCollection feature_collection = interval_info.GetFeatureCollection();
+            file_stream_for_parameters << feature_collection.GetCoefficientOfMotion().GetStandardDeviation() << ","
+                                       << feature_collection.GetOrientation().GetStandardDeviation() << ","
+                                       << feature_collection.GetRatio().GetStandardDeviation() << ","
+                                       << feature_collection.GetPositionX().GetStandardDeviation() << ","
+                                       << feature_collection.GetPositionY().GetStandardDeviation() << ","
+                                       << feature_collection.GetAxisA().GetStandardDeviation() << ","
+                                       << feature_collection.GetAxisB().GetStandardDeviation() << ","
+                                       << interval_info.GetNumberOfFoundObjects() << ",";
 
             string state = "";
 
-            if(data[iData].FallDetected())
+            if(interval_info.IsFallDetected())
             {
                 state = "Fall detected";
             }
             else
             {
-                switch (data[iData].GetState())
+                switch (interval_info.GetHumanState())
                 {
                 case STANDING:
                     state = "Standing";
@@ -90,45 +95,38 @@ void DataCollector::writeToFile(string fileName, vector<IntervalData> data)
                 }
             }
 
-            file_stream << state << endl;
+            file_stream_for_parameters << state << endl;
         }
         else
         {
-            file_stream << "," << "," << "," << "," << "," << "," << ","
-                        << data[iData].GetNumberOfFoundObjects() << "," << endl;
+            file_stream_for_parameters << "," << "," << "," << "," << "," << "," << ","
+                                       << interval_info.GetNumberOfFoundObjects() << "," << endl;
         }
 
-        unsigned int frames_size = data[iData].GetAngles().size();
-        std::vector<optional<double> > frames = data[iData].GetAngles();
-
-        for(unsigned int i_frame = 0; i_frame < frames_size; i_frame++)
+        for(unsigned int i_angle = 0; i_angle < interval_info.GetAngles().size(); i_angle++)
         {
-            optional<double> angle = frames[i_frame];
-
-            if(angle)
+            if(interval_info.GetAngles()[i_angle])
             {
-            file_stream_for_frames << angle.get() << endl;
+                file_stream_for_angles << interval_info.GetAngles()[i_angle].get() << endl;
             }
             else
             {
-                file_stream_for_frames << endl;
+                file_stream_for_angles << endl;
             }
         }
     }
 
-    file_stream.close();
-    file_stream_for_frames.close();
+    file_stream_for_parameters.close();
+    file_stream_for_angles.close();
     mFileMutex.unlock();
 }
 
-void DataCollector::joinAllWriteThreads()
+void DataCollector::JoinAllWriteThreads()
 {
-    unsigned int thread_size = mWriteThreads.size();
-
-    for(unsigned int iThread = 0; iThread < thread_size; iThread++)
+    for(unsigned int i_thread = 0; i_thread < mWriteThreads.size(); i_thread++)
     {
-        mWriteThreads[iThread]->join();
-        delete mWriteThreads[iThread];
+        mWriteThreads[i_thread]->join();
+        delete mWriteThreads[i_thread];
     }
 
     mWriteThreads.clear();

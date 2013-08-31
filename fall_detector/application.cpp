@@ -1,14 +1,13 @@
 #include "application.h"
 
 using namespace std;
-using namespace boost;
 
 namespace FallDetector
 {
 Application::Application()
 {
     mpProcessing = NULL;
-    mIsRunning = false;
+    mRunning = false;
     mShowGui = false;
 }
 
@@ -23,16 +22,16 @@ void Application::Run()
 
     while (!stop)
     {
-        cout << "Running:\t\t" << mIsRunning << endl
+        cout << "Running:\t\t" << mRunning << endl
              << "Camera number:\t\t" << mVideoProcessor.GetCamera() << endl
-             << "Camera resolution:\t" << mVideoProcessor.PrintResolution() << endl
+             << "Camera resolution:\t" << mVideoProcessor.GetResolution() << endl
              << "Show GUI:\t\t" << mShowGui << endl
              << "History:\t\t" << mVideoProcessor.GetHistory() << endl
              << "Threshold:\t\t" << mVideoProcessor.GetThreshold() << endl
              << "===================" << endl
              << "Available commands:" << endl;
 
-        if(mIsRunning)
+        if(mRunning)
         {
             cout << "s - Stop processing" << endl
                  << "q - Quit" << endl
@@ -48,13 +47,13 @@ void Application::Run()
                 mpProcessing->join();
                 delete mpProcessing;
                 mpProcessing = NULL;
-                mIsRunning = false;
+                mRunning = false;
                 break;
             case 'q':
                 mpProcessing->interrupt();
                 cout << "Waiting video processing thread.." << endl;
                 mpProcessing->join();
-                mIsRunning = false;
+                mRunning = false;
                 stop = true;
                 break;
             default:
@@ -82,11 +81,11 @@ void Application::Run()
             {
             case 's':
                 if(mShowGui)
-                    mpProcessing = new thread(&VideoProcessor::RunWithGui, &(mVideoProcessor));
+                    mpProcessing = new boost::thread(&VideoProcessor::RunWithGui, &(mVideoProcessor));
                 else
-                    mpProcessing = new thread(&VideoProcessor::RunWithoutGui, &(mVideoProcessor));
+                    mpProcessing = new boost::thread(&VideoProcessor::RunWithoutGui, &(mVideoProcessor));
 
-                mIsRunning = true;
+                mRunning = true;
                 break;
             case 'g':
                 mShowGui = !mShowGui;
@@ -132,7 +131,6 @@ void Application::handleResolution()
              << ">>";
 
         char key;
-
         cin >> key;
 
         switch (key)

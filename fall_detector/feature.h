@@ -1,5 +1,5 @@
-#ifndef FEATURE_H
-#define FEATURE_H
+#ifndef FALL_DETECTOR_FEATURE_H
+#define FALL_DETECTOR_FEATURE_H
 
 #include <vector>
 
@@ -10,16 +10,14 @@ class Feature
 public:
     Feature();
 
-    void AddSummand(double summand);
+    void Add(double summand);
     void CalculateStandardDeviation();
     double GetStandardDeviation() { return mStandardDeviation; }
 
 private:
     std::vector<double> mSummands;
     double mSum;
-    double mAverage;
-    double mMeanSquareSum;
     double mStandardDeviation;
 };
 }
-#endif // FEATURE_H
+#endif // FALL_DETECTOR_FEATURE_H

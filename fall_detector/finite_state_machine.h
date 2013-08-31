@@ -1,5 +1,5 @@
-#ifndef FINITE_STATE_MACHINE_H
-#define FINITE_STATE_MACHINE_H
+#ifndef FALL_DETECTOR_FINITE_STATE_MACHINE_H
+#define FALL_DETECTOR_FINITE_STATE_MACHINE_H
 
 #include "helpers.h"
 
@@ -10,20 +10,15 @@ class FiniteStateMachine
 public:
     FiniteStateMachine();
 
-    void Stand();
-    void Walk();
-    void Fall();
-    void Lie();
-
-    bool FallDetected() { return mFallDetected; }
-    HumanStateType GetState() { return mState; }
-
+    void MoveToState(HumanState humanState);
+    bool IsFallDetected() { return mFallDetected; }
+    HumanState GetHumanState() { return mHumanState; }
     void Reset();
 
 private:
-    HumanStateType mState;
-    unsigned int mFallCount;
+    HumanState mHumanState;
+    unsigned int mLyingCount;
     bool mFallDetected;
 };
 }
-#endif // FINITE_STATE_MACHINE_H
+#endif // FALL_DETECTOR_FINITE_STATE_MACHINE_H

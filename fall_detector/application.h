@@ -20,7 +20,7 @@ private:
 
     VideoProcessor mVideoProcessor;
     boost::thread* mpProcessing;
-    bool mIsRunning;
+    bool mRunning;
     bool mShowGui;
 };
 }

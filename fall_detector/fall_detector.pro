@@ -20,11 +20,11 @@ SOURCES += main.cpp \
     video_processor.cpp \
     data_collector.cpp \
     interval_processor.cpp \
-    frame_data.cpp \
-    interval_data.cpp \
     finite_state_machine.cpp \
     feature.cpp \
-    parameters.cpp
+    frame_info.cpp \
+    feature_collection.cpp \
+    interval_info.cpp
 
 HEADERS += \
     application.h \
@@ -32,11 +32,11 @@ HEADERS += \
     helpers.h \
     data_collector.h \
     interval_processor.h \
-    frame_data.h \
-    interval_data.h \
     finite_state_machine.h \
     feature.h \
-    parameters.h
+    interval_info.h \
+    feature_collection.h \
+    frame_info.h
 
 win32 {
     INCLUDEPATH += $(OPENCV_DIR)\include \

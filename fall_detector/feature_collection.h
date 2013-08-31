@@ -1,16 +1,16 @@
-#ifndef FEATURES_H
-#define FEATURES_H
+#ifndef FALL_DETECTOR_FEATURE_COLLECTION_H
+#define FALL_DETECTOR_FEATURE_COLLECTION_H
 
 #include "feature.h"
 
 namespace FallDetector
 {
-class Parameters
+class FeatureCollection
 {
 public:
-    Parameters();
+    FeatureCollection();
 
-    void AddSummands(double coefficientOfMotion, double orientation, double ratio, double positionX, double positionY,
+    void Add(double coefficientOfMotion, double orientation, double ratio, double positionX, double positionY,
                      double axisA, double axisB);
     unsigned int GetNumberOfSummands() { return mNumberOfSummands; }
 
@@ -31,4 +31,4 @@ private:
 };
 }
 
-#endif // FEATURES_H
+#endif // FALL_DETECTOR_FEATURE_COLLECTION_H

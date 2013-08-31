@@ -15,7 +15,7 @@ public:
     void RunWithGui();
 
     void SetResolution(int width, int height);
-    std::string PrintResolution();
+    std::string GetResolution();
 
     void SetCamera(unsigned int camera_number) { mCameraNumber = camera_number; }
     unsigned int GetCamera() { return mCameraNumber; }
@@ -25,9 +25,8 @@ public:
     float GetThreshold() { return mThreshold; }
 
 private:
-    void processFrame();
-    double calculateCoefficientOfMotion(cv::Mat &silhouette, cv::Mat &mhiMask);
-    void clearStop();
+    void ProcessFrame();
+    double CalculateCoefficientOfMotion(cv::Mat &silhouette, cv::Mat &mhiMask);
 
     cv::VideoCapture mVideoCapture;
     unsigned int mCameraNumber;
@@ -53,13 +52,13 @@ private:
     int mFrameWidth;
     int mFrameHeight;
 
-    cv::RotatedRect mEllipse;
+    cv::RotatedRect mRotatedRectangle;
     bool mObjectFound;
     static const unsigned int mcMaxNumberOfObjects = 50;
     static const unsigned int mcMinAreaOfObject = 40*40;
     int mMaxAreaOfObject;
 
-    FallDetector::IntervalProcessor mIntervalProcessor;
+    IntervalProcessor mIntervalProcessor;
 };
 }
 
