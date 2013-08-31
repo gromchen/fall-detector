@@ -21,20 +21,23 @@ SOURCES += \
     RaspiCamControl.c \
     camcv.c
 
-INCLUDEPATH += \opt\vc\host_applications\linux\libs\bcm_host\include \
-    \opt\vc\interface\vcos \
-    \opt\vc \
-    \opt\vc\interface\vcos\pthreads \
-    \opt\vc\interface\vmcs_host\linux
+HEADERS += \
+    RaspiPreview.h \
+    RaspiCLI.h \
+    RaspiCamControl.h
 
-LIBS += -L\opt\vc\lib \
+INCLUDEPATH += /home/gromchen/rpi/opt/vc/host_applications/linux/libs/bcm_host/include \
+    /home/gromchen/rpi/opt/vc/interface/vcos \
+    /home/gromchen/rpi/opt/vc \
+    /home/gromchen/rpi/opt/vc/interface/vcos/pthreads \
+    /home/gromchen/rpi/opt/vc/interface/vmcs_host/linux
+
+LIBS += -L/home/gromchen/rpi/opt/vc/lib \
     -lmmal_core \
     -lmmal_util \
     -lmmal_vc_client \
     -lvcos \
     -lbcm_host
 
-HEADERS += \
-    RaspiPreview.h \
-    RaspiCLI.h \
-    RaspiCamControl.h
+target.path = ./Qt_deploy/
+INSTALLS += target
