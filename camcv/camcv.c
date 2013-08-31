@@ -54,6 +54,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <memory.h>
 
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
+
 #define VERSION_STRING "v1.2"
 
 #include "bcm_host.h"
@@ -201,9 +204,9 @@ static void default_status(RASPISTILL_STATE *state)
       return;
    }
 
-   state->timeout = 5000; // 5s delay before take image
-   state->width = 2592;
-   state->height = 1944;
+   state->timeout = 1000; // 1s delay before take image
+   state->width = 320; //2592;
+   state->height = 240; //1944;
    state->quality = 85;
    state->wantRAW = 0;
    state->filename = NULL;
@@ -272,20 +275,21 @@ static void encoder_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buf
    {
       int bytes_written = buffer->length;
 
-      if (buffer->length && pData->file_handle)
+      if (buffer->length)
       {
          mmal_buffer_header_mem_lock(buffer);
 
-         bytes_written = fwrite(buffer->data, 1, buffer->length, pData->file_handle);
+         CvMat* buf = cvCreateMat(1, buffer->length, CV_8UC1);
+         buf->data.ptr = buffer->data;
+         IplImage *img = cvDecodeImage(buf, CV_LOAD_IMAGE_COLOR);
+
+         cvSaveImage("foobar.bmp", img, 0);
+
+         cvNamedWindow("camcvWin", CV_WINDOW_AUTOSIZE);
+         cvShowImage("camcvWin", img);
+         cvWaitKey(0);
 
          mmal_buffer_header_mem_unlock(buffer);
-      }
-
-      // We need to check we wrote what we wanted - it's possible we have run out of storage.
-      if (bytes_written != buffer->length)
-      {
-         vcos_log_error("Unable to write buffer to file - aborting");
-         complete = 1;
       }
 
       // Now flag if we have completed
@@ -766,12 +770,13 @@ int main(int argc, const char **argv)
    {
       PORT_USERDATA callback_data;
 
-      if (state.verbose)
-         fprintf(stderr, "Starting component connection stage\n");
+//      if (state.verbose)
+//         fprintf(stderr, "Starting component connection stage\n");
 
-      camera_preview_port = state.camera_component->output[MMAL_CAMERA_PREVIEW_PORT];
+      camera_preview_port = NULL; //state.camera_component->output[MMAL_CAMERA_PREVIEW_PORT];
       camera_video_port   = state.camera_component->output[MMAL_CAMERA_VIDEO_PORT];
       camera_still_port   = state.camera_component->output[MMAL_CAMERA_CAPTURE_PORT];
+      preview_input_port = state.preview_parameters.preview_component->input[0];
       encoder_input_port  = state.encoder_component->input[0];
       encoder_output_port = state.encoder_component->output[0];
 
@@ -780,7 +785,7 @@ int main(int argc, const char **argv)
       preview_input_port  = state.preview_parameters.preview_component->input[0];
 
       // Connect camera to preview (which might be a null_sink if no preview required)
-      status = connect_ports(camera_preview_port, preview_input_port, &state.preview_connection);
+      //status = connect_ports(camera_preview_port, preview_input_port, &state.preview_connection);
 
       if (status == MMAL_SUCCESS)
       {
@@ -959,7 +964,7 @@ error:
       check_disable_port(camera_video_port);
       check_disable_port(encoder_output_port);
 
-      mmal_connection_destroy(state.preview_connection);
+      //mmal_connection_destroy(state.preview_connection);
 
       mmal_connection_destroy(state.encoder_connection);
 
