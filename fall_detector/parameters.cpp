@@ -4,14 +4,16 @@ namespace FallDetector
 {
 Parameters::Parameters()
 {
-    for(unsigned int iFeature = 0; iFeature < mcsNumberOfFeatures; iFeature++)
+    for(unsigned int i_feature = 0; i_feature < mcsNumberOfFeatures; i_feature++)
+    {
         mFeatures.push_back(Feature());
+    }
 
     mNumberOfSummands = 0;
 }
 
 void Parameters::AddSummands(double coefficientOfMotion, double orientation, double ratio, double positionX,
-                           double positionY, double axisA, double axisB)
+                             double positionY, double axisA, double axisB)
 {
     mFeatures[0].AddSummand(coefficientOfMotion);
     mFeatures[1].AddSummand(orientation);
@@ -26,19 +28,6 @@ void Parameters::AddSummands(double coefficientOfMotion, double orientation, dou
 
 void Parameters::CalculateStandardDeviation()
 {
-    for(unsigned int iFeature = 0; iFeature < mcsNumberOfFeatures; iFeature++)
-    {
-        mFeatures[iFeature].CalculateAverage();
-    }
-
-    for(unsigned int iSummand = 0; iSummand < mNumberOfSummands; iSummand++)
-    {
-        for(unsigned int iFeature = 0; iFeature < mcsNumberOfFeatures; iFeature++)
-        {
-            mFeatures[iFeature].AddSummandToMeanSquareSum(iSummand);
-        }
-    }
-
     for(unsigned int iFeature = 0; iFeature < mcsNumberOfFeatures; iFeature++)
     {
         mFeatures[iFeature].CalculateStandardDeviation();

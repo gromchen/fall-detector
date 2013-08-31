@@ -11,8 +11,6 @@ public:
     Feature();
 
     void AddSummand(double summand);
-    void CalculateAverage();
-    void AddSummandToMeanSquareSum(unsigned int iSummand);
     void CalculateStandardDeviation();
     double GetStandardDeviation() { return mStandardDeviation; }
 

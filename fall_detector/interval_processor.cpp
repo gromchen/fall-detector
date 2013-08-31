@@ -21,23 +21,29 @@ void IntervalProcessor::StartTracking()
 void IntervalProcessor::IncludeObject(FrameData frameData)
 {
     mFrameDataCollection.push_back(frameData);
+
     high_resolution_clock::time_point current_time = high_resolution_clock::now();
     int number_of_milliseconds = duration_cast<milliseconds>(current_time - mTimeOfPreviousSecond).count();
 
     if(number_of_milliseconds >= 1000)
     {
-        Parameters features;
+        Parameters parameters;
         std::vector<optional<double> > angles;
+
         unsigned int frame_data_size = mFrameDataCollection.size();
 
-        for(unsigned int iEllipse = 0; iEllipse < frame_data_size; iEllipse++)
+        for(unsigned int i_frame_data = 0; i_frame_data < frame_data_size; i_frame_data++)
         {
-            if(mFrameDataCollection[iEllipse].ObjectFound())
+            if(mFrameDataCollection[i_frame_data].ObjectFound())
             {
-                RotatedRect object = mFrameDataCollection[iEllipse].GetObject();
-                features.AddSummands(frameData.GetCoefficientOfMotion(), object.angle,
-                                     object.size.height / object.size.width, object.center.x,
-                                     object.center.y, object.size.height, object.size.width);
+                RotatedRect object = mFrameDataCollection[i_frame_data].GetObject();
+                parameters.AddSummands(mFrameDataCollection[i_frame_data].GetCoefficientOfMotion(),
+                                     object.angle,
+                                     object.size.height / object.size.width,
+                                     object.center.x,
+                                     object.center.y,
+                                     object.size.height,
+                                     object.size.width);
 
                 angles.push_back(optional<double>(object.angle));
             }
@@ -47,25 +53,28 @@ void IntervalProcessor::IncludeObject(FrameData frameData)
             }
         }
 
-        if(features.GetNumberOfSummands() > 0)
-            features.CalculateStandardDeviation();
+        if(parameters.GetNumberOfSummands() > 0)
+        {
+            parameters.CalculateStandardDeviation();
+        }
 
         // Determination of the fall
         // TODO: coefficient of motion
-        if(features.GetOrientation().GetStandardDeviation() > 15
-                || features.GetRatio().GetStandardDeviation() > 0.9)
+        if(parameters.GetOrientation().GetStandardDeviation() > 15
+           || parameters.GetRatio().GetStandardDeviation() > 0.9)
         {
             mFiniteStateMachine.Fall();
         }
         else
         {
             // TODO: && not working
-            if(features.GetPositionX().GetStandardDeviation() <= 2
-                    || features.GetPositionY().GetStandardDeviation() <= 2
-                    || features.GetAxisA().GetStandardDeviation() <= 2
-                    || features.GetAxisB().GetStandardDeviation() <= 2)
+            if(parameters.GetPositionX().GetStandardDeviation() <= 2
+               || parameters.GetPositionY().GetStandardDeviation() <= 2
+               || parameters.GetAxisA().GetStandardDeviation() <= 2
+               || parameters.GetAxisB().GetStandardDeviation() <= 2)
             {
-                if(mFiniteStateMachine.GetState() == STANDING || mFiniteStateMachine.GetState() == WALKING)
+                if(mFiniteStateMachine.GetState() == STANDING
+                   || mFiniteStateMachine.GetState() == WALKING)
                 {
                     mFiniteStateMachine.Stand();
                 }
@@ -89,7 +98,9 @@ void IntervalProcessor::IncludeObject(FrameData frameData)
         mTimeOfPreviousSecond = current_time;
 
         mDataCollector.CollectData(IntervalData(boost::posix_time::microsec_clock::local_time(),
-                                                fps, features, mFiniteStateMachine.FallDetected(),
+                                                fps,
+                                                parameters,
+                                                mFiniteStateMachine.FallDetected(),
                                                 mFiniteStateMachine.GetState(),
                                                 angles));
     }

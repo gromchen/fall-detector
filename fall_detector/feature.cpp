@@ -7,8 +7,6 @@ namespace FallDetector
 Feature::Feature()
 {
     mSum = 0;
-    mAverage = 0;
-    mMeanSquareSum = 0;
     mStandardDeviation = 0;
 }
 
@@ -18,18 +16,18 @@ void Feature::AddSummand(double summand)
     mSum += summand;
 }
 
-void Feature::CalculateAverage()
-{
-    mAverage = mSum / mSummands.size();
-}
-
-void Feature::AddSummandToMeanSquareSum(unsigned int iSummand)
-{
-    mMeanSquareSum += pow(mSummands[iSummand] - mAverage, 2);
-}
-
 void Feature::CalculateStandardDeviation()
 {
-    mStandardDeviation = sqrt(mMeanSquareSum / mSummands.size());
+    unsigned int summandsSize = mSummands.size();
+
+    double average = mSum / summandsSize;
+    double meanSquareSum = 0;
+
+    for(unsigned int iSummand = 0; iSummand < summandsSize; iSummand++)
+    {
+        meanSquareSum += pow(mSummands[iSummand] - average, 2);
+    }
+
+    mStandardDeviation = sqrt(meanSquareSum / summandsSize);
 }
 }

@@ -177,7 +177,9 @@ void VideoProcessor::processFrame()
     this_thread::interruption_point();
 
     if (!mVideoCapture.read(mOriginalFrame))
+    {
         throw runtime_error("Could not read new frame");
+    }
 
     (*mpBackgroundSubtractor)(mOriginalFrame, mForegroundMask);
 
@@ -185,24 +187,17 @@ void VideoProcessor::processFrame()
     threshold(mForegroundMask, mThresholdMask, 127, 255, THRESH_BINARY);
 
     // Morphological transformation
-    Mat erode_element = getStructuringElement(MORPH_ELLIPSE,
-                                              Size(mErodeElementSize,
-                                                   mErodeElementSize));
-    erode(mThresholdMask, mErodeMask, erode_element, Point(-1, -1),
-          mErodeIterations);
+    Mat erode_element = getStructuringElement(MORPH_ELLIPSE, Size(mErodeElementSize, mErodeElementSize));
+    erode(mThresholdMask, mErodeMask, erode_element, Point(-1, -1), mErodeIterations);
 
-    Mat dilate_element = getStructuringElement(MORPH_ELLIPSE,
-                                               Size(mDilateElementSize,
-                                                    mDilateElementSize));
-    dilate(mErodeMask, mDilateMask, dilate_element, Point(-1, -1),
-           mDilateIterations);
+    Mat dilate_element = getStructuringElement(MORPH_ELLIPSE, Size(mDilateElementSize, mDilateElementSize));
+    dilate(mErodeMask, mDilateMask, dilate_element, Point(-1, -1), mDilateIterations);
 
     // Contours
     mDilateMask.copyTo(mContoursMask);
     vector<vector<Point> > contours;
     vector<Vec4i> hierarchy;
-    findContours(mContoursMask, contours, hierarchy, CV_RETR_CCOMP,
-                 CV_CHAIN_APPROX_SIMPLE);
+    findContours(mContoursMask, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
     drawContours(mOriginalFrame, contours, -1, Scalar(0, 0, 255), 2);
 
     // Object detection
@@ -218,8 +213,8 @@ void VideoProcessor::processFrame()
             Moments object_moments = moments(Mat(contours[iContour]));
             double area = object_moments.m00;
 
-            if(area > mcMinAreaOfObject && area < mMaxAreaOfObject
-                    && area > reference_area && contours[iContour].size() > 5)
+            if(area > mcMinAreaOfObject && area < mMaxAreaOfObject && area > reference_area
+               && contours[iContour].size() > 5)
             {
                 mEllipse = fitEllipse(Mat(contours[iContour]));
                 mObjectFound = true;
@@ -231,14 +226,14 @@ void VideoProcessor::processFrame()
     double c_motion = 0;
 
     if(mObjectFound)
+    {
         c_motion = calculateCoefficientOfMotion(mDilateMask, mMhiMask);
+    }
 
-    mIntervalProcessor.IncludeObject(FrameData(c_motion, mEllipse,
-                                               mObjectFound));
+    mIntervalProcessor.IncludeObject(FrameData(c_motion, mEllipse, mObjectFound));
 }
 
-double VideoProcessor::calculateCoefficientOfMotion(Mat &silhouette,
-                                                    Mat &mhiMask)
+double VideoProcessor::calculateCoefficientOfMotion(Mat &silhouette, Mat &mhiMask)
 {
     updateMotionHistory(silhouette, mhiMask, (double)clock()/CLOCKS_PER_SEC, 1);
 
@@ -248,25 +243,31 @@ double VideoProcessor::calculateCoefficientOfMotion(Mat &silhouette,
     double number_of_blob_pixels = 0;
     double number_of_history_pixels = 0;
 
-    for(unsigned int iRow = 0; iRow < number_of_rows; iRow++)
+    for(unsigned int i_row = 0; i_row < number_of_rows; i_row++)
     {
-        unsigned char* foreground_data = silhouette.ptr(iRow);
-        unsigned char* mhi_data = mhiMask.ptr(iRow);
+        unsigned char* foreground_data = silhouette.ptr(i_row);
+        unsigned char* mhi_data = mhiMask.ptr(i_row);
 
-        for(unsigned int iColumn = 0; iColumn < number_of_columns; iColumn++)
+        for(unsigned int i_column = 0; i_column < number_of_columns; i_column++)
         {
-            if(mhi_data[iColumn] > 0)
+            if(mhi_data[i_column] > 0)
+            {
                 number_of_history_pixels += 1;
+            }
 
-            if(foreground_data[iColumn] > 0)
+            if(foreground_data[i_column] > 0)
+            {
                 number_of_blob_pixels += 1;
+            }
         }
     }
 
     double c_motion = 0;
 
     if(number_of_history_pixels > number_of_blob_pixels && number_of_blob_pixels > 0)
+    {
         c_motion = (number_of_history_pixels - number_of_blob_pixels) / number_of_blob_pixels;
+    }
 
     //    cout << number_of_history_pixels << " "
     //         << number_of_blob_pixels << " "
