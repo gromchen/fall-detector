@@ -66,41 +66,14 @@ void DataCollector::Write(string fileName, std::vector<IntervalInfo> intervalInf
                                        << feature_collection.GetPositionY().GetStandardDeviation() << ","
                                        << feature_collection.GetAxisA().GetStandardDeviation() << ","
                                        << feature_collection.GetAxisB().GetStandardDeviation() << ","
-                                       << interval_info.GetNumberOfFoundObjects() << ",";
-
-            string state = "";
-
-            if(interval_info.IsFallDetected())
-            {
-                state = "Fall detected";
-            }
-            else
-            {
-                switch (interval_info.GetHumanState())
-                {
-                case STANDING:
-                    state = "Standing";
-                    break;
-                case WALKING:
-                    state = "Walking";
-                    break;
-                case FALLING:
-                    state = "Falling";
-                    break;
-                case LYING:
-                    state = "Lying";
-                    break;
-                default:
-                    break;
-                }
-            }
-
-            file_stream_for_parameters << state << endl;
+                                       << interval_info.GetNumberOfFoundObjects() << ","
+                                       << HumanStateToString(interval_info.GetHumanState()) << endl;
         }
         else
         {
             file_stream_for_parameters << "," << "," << "," << "," << "," << "," << ","
-                                       << interval_info.GetNumberOfFoundObjects() << "," << endl;
+                                       << interval_info.GetNumberOfFoundObjects() << ","
+                                       << HumanStateToString(interval_info.GetHumanState()) << endl;
         }
 
         for(unsigned int i_angle = 0; i_angle < interval_info.GetAngles().size(); i_angle++)

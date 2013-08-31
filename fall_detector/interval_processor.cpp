@@ -34,9 +34,9 @@ void IntervalProcessor::Include(FrameInfo frameInfo)
         {
             FrameInfo frame_info = mFrameInfos[i_frame_data];
 
-            if(frame_info.IsObjectFound())
+            if(frame_info.GetOptionalRotatedRectangle())
             {
-                RotatedRect rotated_rectangle = frame_info.GetRotatedRectangle();
+                RotatedRect rotated_rectangle = frame_info.GetOptionalRotatedRectangle().get();
                 feature_collection.Add(frame_info.GetCoefficientOfMotion(),
                                        rotated_rectangle.angle,
                                        rotated_rectangle.size.height / rotated_rectangle.size.width,
@@ -53,43 +53,48 @@ void IntervalProcessor::Include(FrameInfo frameInfo)
             }
         }
 
-        if(feature_collection.GetNumberOfSummands() > 0)
+        if(feature_collection.GetNumberOfSummands() > 1) // Greater than 1, because otherwise standard deviation is 0
         {
             feature_collection.CalculateStandardDeviation();
-        }
 
-        // Determination of the fall
-        // TODO: coefficient of motion
-        if(feature_collection.GetOrientation().GetStandardDeviation() > 15
-           || feature_collection.GetRatio().GetStandardDeviation() > 0.9)
-        {
-            mFiniteStateMachine.MoveToState(FALLING);
-        }
-        else
-        {
-            // TODO: && not working
-            if(feature_collection.GetPositionX().GetStandardDeviation() <= 2
-               || feature_collection.GetPositionY().GetStandardDeviation() <= 2
-               || feature_collection.GetAxisA().GetStandardDeviation() <= 2
-               || feature_collection.GetAxisB().GetStandardDeviation() <= 2)
+            // Determination of the fall
+            // TODO: coefficient of motion
+            if(feature_collection.GetOrientation().GetStandardDeviation() > 15
+               || feature_collection.GetRatio().GetStandardDeviation() > 0.9)
             {
-                if(mFiniteStateMachine.GetHumanState() == STANDING
-                   || mFiniteStateMachine.GetHumanState() == WALKING)
-                {
-                    mFiniteStateMachine.MoveToState(STANDING);
-                }
-                else
-                {
-                    if(mFiniteStateMachine.GetHumanState() == FALLING || mFiniteStateMachine.GetHumanState() == LYING)
-                    {
-                        mFiniteStateMachine.MoveToState(LYING);
-                    }
-                }
+                mFiniteStateMachine.MoveToState(FALLING);
             }
             else
             {
-                mFiniteStateMachine.MoveToState(WALKING);
+                // TODO: && not working
+                if(feature_collection.GetPositionX().GetStandardDeviation() <= 2
+                   || feature_collection.GetPositionY().GetStandardDeviation() <= 2
+                   || feature_collection.GetAxisA().GetStandardDeviation() <= 2
+                   || feature_collection.GetAxisB().GetStandardDeviation() <= 2)
+                {
+                    if(mFiniteStateMachine.GetHumanState() == STANDING
+                       || mFiniteStateMachine.GetHumanState() == WALKING)
+                    {
+                        mFiniteStateMachine.MoveToState(STANDING);
+                    }
+                    else
+                    {
+                        if(mFiniteStateMachine.GetHumanState() == FALLING
+                           || mFiniteStateMachine.GetHumanState() == LYING)
+                        {
+                            mFiniteStateMachine.MoveToState(LYING);
+                        }
+                    }
+                }
+                else
+                {
+                    mFiniteStateMachine.MoveToState(WALKING);
+                }
             }
+        }
+        else
+        {
+            mFiniteStateMachine.MoveToState(NOT_DETECTED);
         }
 
         // Data collection
@@ -100,7 +105,6 @@ void IntervalProcessor::Include(FrameInfo frameInfo)
         mDataCollector.Collect(IntervalInfo(boost::posix_time::microsec_clock::local_time(),
                                             fps,
                                             feature_collection,
-                                            mFiniteStateMachine.IsFallDetected(),
                                             mFiniteStateMachine.GetHumanState(),
                                             angles));
     }

@@ -24,7 +24,8 @@ SOURCES += main.cpp \
     feature.cpp \
     frame_info.cpp \
     feature_collection.cpp \
-    interval_info.cpp
+    interval_info.cpp \
+    helpers.cpp
 
 HEADERS += \
     application.h \

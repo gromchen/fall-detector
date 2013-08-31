@@ -22,7 +22,7 @@ VideoProcessor::VideoProcessor()
     mDilateElementSize = 8;
     mDilateIterations = 2;
 
-    mHistory = 500;
+    mHistory = 600; // TODO: maybe even more
     mThreshold = 16;
     mpBackgroundSubtractor = new BackgroundSubtractorMOG2(mHistory, mThreshold);
 }
@@ -114,34 +114,15 @@ void VideoProcessor::RunWithGui()
                 ellipse(mOriginalFrame, mRotatedRectangle, Scalar(0, 255, 0), 2);
             }
 
-            if(mIntervalProcessor.IsFallDetected())
-            {
-                putText(mOriginalFrame, "Fall detected", Point(0, 20), 1, 1, Scalar(0, 255, 0), 2);
-            }
-            else
-            {
-                string state = "";
+            Scalar colour = Scalar(255, 0, 0);
 
-                switch (mIntervalProcessor.GetHumanState())
-                {
-                case STANDING:
-                    state = "Standing";
-                    break;
-                case WALKING:
-                    state = "Walking";
-                    break;
-                case FALLING:
-                    state = "Falling";
-                    break;
-                case LYING:
-                    state = "LYING";
-                    break;
-                default:
-                    break;
-                }
-
-                putText(mOriginalFrame, state, Point(0, 20), 1, 1, Scalar(255, 0, 0), 2);
+            if(mIntervalProcessor.GetHumanState() == INJURED)
+            {
+                colour = Scalar(0, 0, 255);
             }
+
+            putText(mOriginalFrame, "Human is " + HumanStateToString(mIntervalProcessor.GetHumanState()),
+                    Point(0, 20), 1, 1, colour, 2);
 
             imshow(name_original_frame, mOriginalFrame);
             imshow(name_foreground_mask, mForegroundMask);
@@ -237,14 +218,21 @@ void VideoProcessor::ProcessFrame()
         }
     }
 
-    double c_motion = 0;
+    double coefficient_of_motion = 0;
 
     if(mObjectFound)
     {
-        c_motion = CalculateCoefficientOfMotion(mDilateMask, mMhiMask);
+        coefficient_of_motion = CalculateCoefficientOfMotion(mDilateMask, mMhiMask);
     }
 
-    mIntervalProcessor.Include(FrameInfo(c_motion, mRotatedRectangle, mObjectFound));
+    if(mObjectFound)
+    {
+        mIntervalProcessor.Include(FrameInfo(coefficient_of_motion, optional<RotatedRect>(mRotatedRectangle)));
+    }
+    else
+    {
+        mIntervalProcessor.Include(FrameInfo(coefficient_of_motion, optional<RotatedRect>()));
+    }
 }
 
 double VideoProcessor::CalculateCoefficientOfMotion(Mat &silhouette, Mat &mhiMask)

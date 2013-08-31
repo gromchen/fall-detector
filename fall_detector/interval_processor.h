@@ -18,7 +18,6 @@ public:
     void Include(FrameInfo frameInfo);
     void Reset();
 
-    bool IsFallDetected() { return mFiniteStateMachine.IsFallDetected(); }
     HumanState GetHumanState() { return mFiniteStateMachine.GetHumanState(); }
 
 private:    

@@ -14,13 +14,17 @@ std::string ToString(T object)
     return string_stream.str();
 }
 
-enum HumanState
+typedef enum
 {
+    NOT_DETECTED,
     STANDING,
     WALKING,
     FALLING,
-    LYING
-};
+    LYING,
+    INJURED
+} HumanState;
+
+std::string HumanStateToString(HumanState humanState);
 }
 
 #endif // FALL_DETECTOR_HELPERS_H

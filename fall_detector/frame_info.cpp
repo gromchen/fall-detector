@@ -4,12 +4,9 @@ using namespace cv;
 
 namespace FallDetector
 {
-FrameInfo::FrameInfo(double coefficientOfMotion,
-                     cv::RotatedRect rotatedRectangle,
-                     bool objectFound)
+FrameInfo::FrameInfo(double coefficientOfMotion, boost::optional<RotatedRect> optionalRotatedRectangle)
 {
     mCoefficientOfMotion = coefficientOfMotion;
-    mRotatedRectangle = rotatedRectangle;
-    mObjectFound = objectFound;
+    mOptionalRotatedRectangle = optionalRotatedRectangle;
 }
 }

@@ -1,6 +1,7 @@
 #include "finite_state_machine.h"
 
 #include <stdexcept>
+#include <string>
 
 using namespace std;
 
@@ -8,9 +9,8 @@ namespace FallDetector
 {
 FiniteStateMachine::FiniteStateMachine()
 {
-    mHumanState = STANDING;
+    mHumanState = NOT_DETECTED;
     mLyingCount = 0;
-    mFallDetected = false;
 }
 
 void FiniteStateMachine::MoveToState(HumanState humanState)
@@ -21,8 +21,13 @@ void FiniteStateMachine::MoveToState(HumanState humanState)
 
         if(mLyingCount >= 5)
         {
-            mFallDetected = true;
+            mHumanState = INJURED;
+            return;
         }
+    }
+    else
+    {
+        mLyingCount = 0;
     }
 
     if(mHumanState == humanState)
@@ -35,8 +40,7 @@ void FiniteStateMachine::MoveToState(HumanState humanState)
 
 void FiniteStateMachine::Reset()
 {
-    mHumanState = STANDING;
+    mHumanState = NOT_DETECTED;
     mLyingCount = 0;
-    mFallDetected = false;
 }
 }
