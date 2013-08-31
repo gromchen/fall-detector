@@ -102,42 +102,46 @@ int mmal_status_to_int(MMAL_STATUS_T status);
  */
 typedef struct
 {
-   int timeout;                        /// Time taken before frame is grabbed and app then shuts down. Units are milliseconds
-   int width;                          /// Requested width of image
-   int height;                         /// requested height of image
-   int quality;                        /// JPEG quality setting (1-100)
-   int wantRAW;                        /// Flag for whether the JPEG metadata also contains the RAW bayer image
-   char *filename;                     /// filename of output file
-   MMAL_PARAM_THUMBNAIL_CONFIG_T thumbnailConfig;
-   int verbose;                        /// !0 if want detailed run information
-   int demoMode;                       /// Run app in demo mode
-   int demoInterval;                   /// Interval between camera settings changes
-   MMAL_FOURCC_T encoding;             /// Encoding to use for the output file.
-   const char *exifTags[MAX_USER_EXIF_TAGS]; /// Array of pointers to tags supplied from the command line
-   int numExifTags;                    /// Number of supplied tags
-   int timelapse;                      /// Delay between each picture in timelapse mode. If 0, disable timelapse
-   int fullResPreview;                 /// If set, the camera preview port runs at capture resolution. Reduces fps.
+    int timeout;                        /// Time taken before frame is grabbed and app then shuts down. Units are milliseconds
+    int width;                          /// Requested width of image
+    int height;                         /// requested height of image
+    int quality;                        /// JPEG quality setting (1-100)
+    int wantRAW;                        /// Flag for whether the JPEG metadata also contains the RAW bayer image
+    char *filename;                     /// filename of output file
+    MMAL_PARAM_THUMBNAIL_CONFIG_T thumbnailConfig;
+    int verbose;                        /// !0 if want detailed run information
+    int demoMode;                       /// Run app in demo mode
+    int demoInterval;                   /// Interval between camera settings changes
+    MMAL_FOURCC_T encoding;             /// Encoding to use for the output file.
+    const char *exifTags[MAX_USER_EXIF_TAGS]; /// Array of pointers to tags supplied from the command line
+    int numExifTags;                    /// Number of supplied tags
+    int timelapse;                      /// Delay between each picture in timelapse mode. If 0, disable timelapse
+    int fullResPreview;                 /// If set, the camera preview port runs at capture resolution. Reduces fps.
 
-   RASPIPREVIEW_PARAMETERS preview_parameters;    /// Preview setup parameters
-   RASPICAM_CAMERA_PARAMETERS camera_parameters; /// Camera setup parameters
+    RASPIPREVIEW_PARAMETERS preview_parameters;    /// Preview setup parameters
+    RASPICAM_CAMERA_PARAMETERS camera_parameters; /// Camera setup parameters
 
-   MMAL_COMPONENT_T *camera_component;    /// Pointer to the camera component
-   MMAL_COMPONENT_T *encoder_component;   /// Pointer to the encoder component
-   MMAL_COMPONENT_T *null_sink_component; /// Pointer to the null sink component
-   MMAL_CONNECTION_T *preview_connection; /// Pointer to the connection from camera to preview
-   MMAL_CONNECTION_T *encoder_connection; /// Pointer to the connection from camera to encoder
+    MMAL_COMPONENT_T *camera_component;    /// Pointer to the camera component
+    MMAL_COMPONENT_T *encoder_component;   /// Pointer to the encoder component
+    MMAL_COMPONENT_T *null_sink_component; /// Pointer to the null sink component
+    MMAL_CONNECTION_T *preview_connection; /// Pointer to the connection from camera to preview
+    MMAL_CONNECTION_T *encoder_connection; /// Pointer to the connection from camera to encoder
 
-   MMAL_POOL_T *encoder_pool; /// Pointer to the pool of buffers used by encoder output port
+    MMAL_POOL_T *encoder_pool; /// Pointer to the pool of buffers used by encoder output port
 
 } RASPISTILL_STATE;
+
+CvMat* buf;
+IplImage *img;
+int nbFrames = 0;
 
 /** Struct used to pass information in encoder port userdata to callback
  */
 typedef struct
 {
-   FILE *file_handle;                   /// File handle to write buffer data to.
-   VCOS_SEMAPHORE_T complete_semaphore; /// semaphore which is posted when we reach end of frame (indicates end of capture or fault)
-   RASPISTILL_STATE *pstate;            /// pointer to our state in case required in callback
+    FILE *file_handle;                   /// File handle to write buffer data to.
+    VCOS_SEMAPHORE_T complete_semaphore; /// semaphore which is posted when we reach end of frame (indicates end of capture or fault)
+    RASPISTILL_STATE *pstate;            /// pointer to our state in case required in callback
 } PORT_USERDATA;
 
 /// Comamnd ID's and Structure defining our command line options
@@ -158,34 +162,34 @@ typedef struct
 
 static COMMAND_LIST cmdline_commands[] =
 {
-   { CommandHelp,    "-help",       "?",  "This help information", 0 },
-   { CommandWidth,   "-width",      "w",  "Set image width <size>", 1 },
-   { CommandHeight,  "-height",     "h",  "Set image height <size>", 1 },
-   { CommandQuality, "-quality",    "q",  "Set jpeg quality <0 to 100>", 1 },
-   { CommandRaw,     "-raw",        "r",  "Add raw bayer data to jpeg metadata", 0 },
-   { CommandOutput,  "-output",     "o",  "Output filename <filename> (to write to stdout, use '-o -'). If not specified, no file is saved", 1 },
-   { CommandVerbose, "-verbose",    "v",  "Output verbose information during run", 0 },
-   { CommandTimeout, "-timeout",    "t",  "Time (in ms) before takes picture and shuts down (if not specified, set to 5s)", 1 },
-   { CommandThumbnail,"-thumb",     "th", "Set thumbnail parameters (x:y:quality)", 1},
-   { CommandDemoMode,"-demo",       "d",  "Run a demo mode (cycle through range of camera options, no capture)", 0},
-   { CommandEncoding,"-encoding",   "e",  "Encoding to use for output file (jpg, bmp, gif, png)", 1},
-   { CommandExifTag, "-exif",       "x",  "EXIF tag to apply to captures (format as 'key=value')", 1},
-   { CommandTimelapse,"-timelapse", "tl", "Timelapse mode. Takes a picture every <t>ms", 1},
-   { CommandFullResPreview,"-fullpreview", "fp", "Run the preview using the still capture resolution (may reduce preview fps)", 0},
+    { CommandHelp,    "-help",       "?",  "This help information", 0 },
+    { CommandWidth,   "-width",      "w",  "Set image width <size>", 1 },
+    { CommandHeight,  "-height",     "h",  "Set image height <size>", 1 },
+    { CommandQuality, "-quality",    "q",  "Set jpeg quality <0 to 100>", 1 },
+    { CommandRaw,     "-raw",        "r",  "Add raw bayer data to jpeg metadata", 0 },
+    { CommandOutput,  "-output",     "o",  "Output filename <filename> (to write to stdout, use '-o -'). If not specified, no file is saved", 1 },
+    { CommandVerbose, "-verbose",    "v",  "Output verbose information during run", 0 },
+    { CommandTimeout, "-timeout",    "t",  "Time (in ms) before takes picture and shuts down (if not specified, set to 5s)", 1 },
+    { CommandThumbnail,"-thumb",     "th", "Set thumbnail parameters (x:y:quality)", 1},
+    { CommandDemoMode,"-demo",       "d",  "Run a demo mode (cycle through range of camera options, no capture)", 0},
+    { CommandEncoding,"-encoding",   "e",  "Encoding to use for output file (jpg, bmp, gif, png)", 1},
+    { CommandExifTag, "-exif",       "x",  "EXIF tag to apply to captures (format as 'key=value')", 1},
+    { CommandTimelapse,"-timelapse", "tl", "Timelapse mode. Takes a picture every <t>ms", 1},
+    { CommandFullResPreview,"-fullpreview", "fp", "Run the preview using the still capture resolution (may reduce preview fps)", 0},
 };
 
 static int cmdline_commands_size = sizeof(cmdline_commands) / sizeof(cmdline_commands[0]);
 
 static struct
 {
-   char *format;
-   MMAL_FOURCC_T encoding;
+    char *format;
+    MMAL_FOURCC_T encoding;
 } encoding_xref[] =
 {
-   {"jpg", MMAL_ENCODING_JPEG},
-   {"bmp", MMAL_ENCODING_BMP},
-   {"gif", MMAL_ENCODING_GIF},
-   {"png", MMAL_ENCODING_PNG}
+    {"jpg", MMAL_ENCODING_JPEG},
+    {"bmp", MMAL_ENCODING_BMP},
+    {"gif", MMAL_ENCODING_GIF},
+    {"png", MMAL_ENCODING_PNG}
 };
 
 static int encoding_xref_size = sizeof(encoding_xref) / sizeof(encoding_xref[0]);
@@ -198,40 +202,40 @@ static int encoding_xref_size = sizeof(encoding_xref) / sizeof(encoding_xref[0])
  */
 static void default_status(RASPISTILL_STATE *state)
 {
-   if (!state)
-   {
-      vcos_assert(0);
-      return;
-   }
+    if (!state)
+    {
+        vcos_assert(0);
+        return;
+    }
 
-   state->timeout = 1000; // 1s delay before take image
-   state->width = 320; //2592;
-   state->height = 240; //1944;
-   state->quality = 85;
-   state->wantRAW = 0;
-   state->filename = NULL;
-   state->verbose = 0;
-   state->thumbnailConfig.enable = 1;
-   state->thumbnailConfig.width = 64;
-   state->thumbnailConfig.height = 48;
-   state->thumbnailConfig.quality = 35;
-   state->demoMode = 0;
-   state->demoInterval = 250; // ms
-   state->camera_component = NULL;
-   state->encoder_component = NULL;
-   state->preview_connection = NULL;
-   state->encoder_connection = NULL;
-   state->encoder_pool = NULL;
-   state->encoding = MMAL_ENCODING_JPEG;
-   state->numExifTags = 0;
-   state->timelapse = 0;
-   state->fullResPreview = 0;
+    state->timeout = 1000; // 1s delay before take image
+    state->width = 320; //2592;
+    state->height = 240; //1944;
+    state->quality = 85;
+    state->wantRAW = 0;
+    state->filename = NULL;
+    state->verbose = 0;
+    state->thumbnailConfig.enable = 1;
+    state->thumbnailConfig.width = 64;
+    state->thumbnailConfig.height = 48;
+    state->thumbnailConfig.quality = 35;
+    state->demoMode = 0;
+    state->demoInterval = 250; // ms
+    state->camera_component = NULL;
+    state->encoder_component = NULL;
+    state->preview_connection = NULL;
+    state->encoder_connection = NULL;
+    state->encoder_pool = NULL;
+    state->encoding = MMAL_ENCODING_JPEG;
+    state->numExifTags = 0;
+    state->timelapse = 0;
+    state->fullResPreview = 0;
 
-   // Setup preview window defaults
-   raspipreview_set_defaults(&state->preview_parameters);
+    // Setup preview window defaults
+    raspipreview_set_defaults(&state->preview_parameters);
 
-   // Set up the camera_parameters to default
-   raspicamcontrol_set_defaults(&state->camera_parameters);
+    // Set up the camera_parameters to default
+    raspicamcontrol_set_defaults(&state->camera_parameters);
 }
 
 /**
@@ -244,15 +248,15 @@ static void default_status(RASPISTILL_STATE *state)
  */
 static void camera_control_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer)
 {
-   if (buffer->cmd == MMAL_EVENT_PARAMETER_CHANGED)
-   {
-   }
-   else
-   {
-      vcos_log_error("Received unexpected camera control callback event, 0x%08x", buffer->cmd);
-   }
+    if (buffer->cmd == MMAL_EVENT_PARAMETER_CHANGED)
+    {
+    }
+    else
+    {
+        vcos_log_error("Received unexpected camera control callback event, 0x%08x", buffer->cmd);
+    }
 
-   mmal_buffer_header_release(buffer);
+    mmal_buffer_header_release(buffer);
 }
 
 /**
@@ -265,63 +269,59 @@ static void camera_control_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buf
  */
 static void encoder_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer)
 {
-   int complete = 0;
+    int complete = 0;
 
-   // We pass our file handle and other stuff in via the userdata field.
+    // We pass our file handle and other stuff in via the userdata field.
 
-   PORT_USERDATA *pData = (PORT_USERDATA *)port->userdata;
+    PORT_USERDATA *pData = (PORT_USERDATA *)port->userdata;
 
-   if (pData)
-   {
-      int bytes_written = buffer->length;
+    if (pData)
+    {
+        if (buffer->length)
+        {
+            mmal_buffer_header_mem_lock(buffer);
 
-      if (buffer->length)
-      {
-         mmal_buffer_header_mem_lock(buffer);
+            buf = cvCreateMat(1, buffer->length, CV_8UC1);
+            buf->data.ptr = buffer->data;
+            img = cvDecodeImage(buf, CV_LOAD_IMAGE_COLOR);
 
-         CvMat* buf = cvCreateMat(1, buffer->length, CV_8UC1);
-         buf->data.ptr = buffer->data;
-         IplImage *img = cvDecodeImage(buf, CV_LOAD_IMAGE_COLOR);
+            cvShowImage("camcvWin", img);
+            cvWaitKey(1);
+            nbFrames = nbFrames + 1;
 
-         cvSaveImage("foobar.bmp", img, 0);
+            mmal_buffer_header_mem_unlock(buffer);
+        }
 
-         cvNamedWindow("camcvWin", CV_WINDOW_AUTOSIZE);
-         cvShowImage("camcvWin", img);
-         cvWaitKey(0);
+        // Now flag if we have completed
+        if (buffer->flags & (MMAL_BUFFER_HEADER_FLAG_FRAME_END | MMAL_BUFFER_HEADER_FLAG_TRANSMISSION_FAILED))
+            complete = 1;
+    }
+    else
+    {
+        vcos_log_error("Received a encoder buffer callback with no state");
+    }
 
-         mmal_buffer_header_mem_unlock(buffer);
-      }
+    // release buffer back to the pool
+    mmal_buffer_header_release(buffer);
 
-      // Now flag if we have completed
-      if (buffer->flags & (MMAL_BUFFER_HEADER_FLAG_FRAME_END | MMAL_BUFFER_HEADER_FLAG_TRANSMISSION_FAILED))
-         complete = 1;
-   }
-   else
-   {
-      vcos_log_error("Received a encoder buffer callback with no state");
-   }
+    // and send one back to the port (if still open)
+    if (port->is_enabled)
+    {
+        MMAL_STATUS_T status;
+        MMAL_BUFFER_HEADER_T *new_buffer;
 
-   // release buffer back to the pool
-   mmal_buffer_header_release(buffer);
+        new_buffer = mmal_queue_get(pData->pstate->encoder_pool->queue);
 
-   // and send one back to the port (if still open)
-   if (port->is_enabled)
-   {
-      MMAL_STATUS_T status;
-      MMAL_BUFFER_HEADER_T *new_buffer;
+        if (new_buffer)
+        {
+            status = mmal_port_send_buffer(port, new_buffer);
+        }
+        if (!new_buffer || status != MMAL_SUCCESS)
+            vcos_log_error("Unable to return a buffer to the encoder port");
+    }
 
-      new_buffer = mmal_queue_get(pData->pstate->encoder_pool->queue);
-
-      if (new_buffer)
-      {
-         status = mmal_port_send_buffer(port, new_buffer);
-      }
-      if (!new_buffer || status != MMAL_SUCCESS)
-         vcos_log_error("Unable to return a buffer to the encoder port");
-   }
-
-   if (complete)
-      vcos_semaphore_post(&(pData->complete_semaphore));
+    if (complete)
+        vcos_semaphore_post(&(pData->complete_semaphore));
 
 }
 
@@ -336,171 +336,171 @@ static void encoder_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buf
  */
 static MMAL_STATUS_T create_camera_component(RASPISTILL_STATE *state)
 {
-   MMAL_COMPONENT_T *camera = 0;
-   MMAL_ES_FORMAT_T *format;
-   MMAL_PORT_T *preview_port = NULL, *video_port = NULL, *still_port = NULL;
-   MMAL_STATUS_T status;
+    MMAL_COMPONENT_T *camera = 0;
+    MMAL_ES_FORMAT_T *format;
+    MMAL_PORT_T *preview_port = NULL, *video_port = NULL, *still_port = NULL;
+    MMAL_STATUS_T status;
 
-   /* Create the component */
-   status = mmal_component_create(MMAL_COMPONENT_DEFAULT_CAMERA, &camera);
+    /* Create the component */
+    status = mmal_component_create(MMAL_COMPONENT_DEFAULT_CAMERA, &camera);
 
-   if (status != MMAL_SUCCESS)
-   {
-      vcos_log_error("Failed to create camera component");
-      goto error;
-   }
+    if (status != MMAL_SUCCESS)
+    {
+        vcos_log_error("Failed to create camera component");
+        goto error;
+    }
 
-   if (!camera->output_num)
-   {
-      status = MMAL_ENOSYS;
-      vcos_log_error("Camera doesn't have output ports");
-      goto error;
-   }
+    if (!camera->output_num)
+    {
+        status = MMAL_ENOSYS;
+        vcos_log_error("Camera doesn't have output ports");
+        goto error;
+    }
 
-   preview_port = camera->output[MMAL_CAMERA_PREVIEW_PORT];
-   video_port = camera->output[MMAL_CAMERA_VIDEO_PORT];
-   still_port = camera->output[MMAL_CAMERA_CAPTURE_PORT];
+    preview_port = camera->output[MMAL_CAMERA_PREVIEW_PORT];
+    video_port = camera->output[MMAL_CAMERA_VIDEO_PORT];
+    still_port = camera->output[MMAL_CAMERA_CAPTURE_PORT];
 
-   // Enable the camera, and tell it its control callback function
-   status = mmal_port_enable(camera->control, camera_control_callback);
+    // Enable the camera, and tell it its control callback function
+    status = mmal_port_enable(camera->control, camera_control_callback);
 
-   if (status != MMAL_SUCCESS)
-   {
-      vcos_log_error("Unable to enable control port : error %d", status);
-      goto error;
-   }
+    if (status != MMAL_SUCCESS)
+    {
+        vcos_log_error("Unable to enable control port : error %d", status);
+        goto error;
+    }
 
-   //  set up the camera configuration
-   {
-      MMAL_PARAMETER_CAMERA_CONFIG_T cam_config =
-      {
-         { MMAL_PARAMETER_CAMERA_CONFIG, sizeof(cam_config) },
-         .max_stills_w = state->width,
-         .max_stills_h = state->height,
-         .stills_yuv422 = 0,
-         .one_shot_stills = 1,
-         .max_preview_video_w = state->preview_parameters.previewWindow.width,
-         .max_preview_video_h = state->preview_parameters.previewWindow.height,
-         .num_preview_video_frames = 3,
-         .stills_capture_circular_buffer_height = 0,
-         .fast_preview_resume = 0,
-         .use_stc_timestamp = MMAL_PARAM_TIMESTAMP_MODE_RESET_STC
-      };
+    //  set up the camera configuration
+    {
+        MMAL_PARAMETER_CAMERA_CONFIG_T cam_config =
+        {
+            { MMAL_PARAMETER_CAMERA_CONFIG, sizeof(cam_config) },
+            .max_stills_w = state->width,
+            .max_stills_h = state->height,
+            .stills_yuv422 = 0,
+            .one_shot_stills = 1,
+            .max_preview_video_w = state->preview_parameters.previewWindow.width,
+            .max_preview_video_h = state->preview_parameters.previewWindow.height,
+            .num_preview_video_frames = 3,
+            .stills_capture_circular_buffer_height = 0,
+            .fast_preview_resume = 0,
+            .use_stc_timestamp = MMAL_PARAM_TIMESTAMP_MODE_RESET_STC
+        };
 
-      if (state->fullResPreview)
-      {
-         cam_config.max_preview_video_w = state->width;
-         cam_config.max_preview_video_h = state->height;
-      }
+        if (state->fullResPreview)
+        {
+            cam_config.max_preview_video_w = state->width;
+            cam_config.max_preview_video_h = state->height;
+        }
 
-      mmal_port_parameter_set(camera->control, &cam_config.hdr);
-   }
+        mmal_port_parameter_set(camera->control, &cam_config.hdr);
+    }
 
-   raspicamcontrol_set_all_parameters(camera, &state->camera_parameters);
+    raspicamcontrol_set_all_parameters(camera, &state->camera_parameters);
 
-   // Now set up the port formats
+    // Now set up the port formats
 
-   format = preview_port->format;
+    format = preview_port->format;
 
-   format->encoding = MMAL_ENCODING_OPAQUE;
-   format->encoding_variant = MMAL_ENCODING_I420;
+    format->encoding = MMAL_ENCODING_OPAQUE;
+    format->encoding_variant = MMAL_ENCODING_I420;
 
-   if (state->fullResPreview)
-   {
-      // In this mode we are forcing the preview to be generated from the full capture resolution.
-      // This runs at a max of 15fps with the OV5647 sensor.
-      format->es->video.width = state->width;
-      format->es->video.height = state->height;
-      format->es->video.crop.x = 0;
-      format->es->video.crop.y = 0;
-      format->es->video.crop.width = state->width;
-      format->es->video.crop.height = state->height;
-      format->es->video.frame_rate.num = FULL_RES_PREVIEW_FRAME_RATE_NUM;
-      format->es->video.frame_rate.den = FULL_RES_PREVIEW_FRAME_RATE_DEN;
-   }
-   else
-   {
-      // use our normal preview mode - probably 1080p30
-      format->es->video.width = state->preview_parameters.previewWindow.width;
-      format->es->video.height = state->preview_parameters.previewWindow.height;
-      format->es->video.crop.x = 0;
-      format->es->video.crop.y = 0;
-      format->es->video.crop.width = state->preview_parameters.previewWindow.width;
-      format->es->video.crop.height = state->preview_parameters.previewWindow.height;
-      format->es->video.frame_rate.num = PREVIEW_FRAME_RATE_NUM;
-      format->es->video.frame_rate.den = PREVIEW_FRAME_RATE_DEN;
-   }
+    if (state->fullResPreview)
+    {
+        // In this mode we are forcing the preview to be generated from the full capture resolution.
+        // This runs at a max of 15fps with the OV5647 sensor.
+        format->es->video.width = state->width;
+        format->es->video.height = state->height;
+        format->es->video.crop.x = 0;
+        format->es->video.crop.y = 0;
+        format->es->video.crop.width = state->width;
+        format->es->video.crop.height = state->height;
+        format->es->video.frame_rate.num = FULL_RES_PREVIEW_FRAME_RATE_NUM;
+        format->es->video.frame_rate.den = FULL_RES_PREVIEW_FRAME_RATE_DEN;
+    }
+    else
+    {
+        // use our normal preview mode - probably 1080p30
+        format->es->video.width = state->preview_parameters.previewWindow.width;
+        format->es->video.height = state->preview_parameters.previewWindow.height;
+        format->es->video.crop.x = 0;
+        format->es->video.crop.y = 0;
+        format->es->video.crop.width = state->preview_parameters.previewWindow.width;
+        format->es->video.crop.height = state->preview_parameters.previewWindow.height;
+        format->es->video.frame_rate.num = PREVIEW_FRAME_RATE_NUM;
+        format->es->video.frame_rate.den = PREVIEW_FRAME_RATE_DEN;
+    }
 
-   status = mmal_port_format_commit(preview_port);
+    status = mmal_port_format_commit(preview_port);
 
-   if (status != MMAL_SUCCESS)
-   {
-      vcos_log_error("camera viewfinder format couldn't be set");
-      goto error;
-   }
+    if (status != MMAL_SUCCESS)
+    {
+        vcos_log_error("camera viewfinder format couldn't be set");
+        goto error;
+    }
 
-   // Set the same format on the video  port (which we dont use here)
-   mmal_format_full_copy(video_port->format, format);
-   status = mmal_port_format_commit(video_port);
+    // Set the same format on the video  port (which we dont use here)
+    mmal_format_full_copy(video_port->format, format);
+    status = mmal_port_format_commit(video_port);
 
-   if (status  != MMAL_SUCCESS)
-   {
-      vcos_log_error("camera video format couldn't be set");
-      goto error;
-   }
+    if (status  != MMAL_SUCCESS)
+    {
+        vcos_log_error("camera video format couldn't be set");
+        goto error;
+    }
 
-   // Ensure there are enough buffers to avoid dropping frames
-   if (video_port->buffer_num < VIDEO_OUTPUT_BUFFERS_NUM)
-      video_port->buffer_num = VIDEO_OUTPUT_BUFFERS_NUM;
+    // Ensure there are enough buffers to avoid dropping frames
+    if (video_port->buffer_num < VIDEO_OUTPUT_BUFFERS_NUM)
+        video_port->buffer_num = VIDEO_OUTPUT_BUFFERS_NUM;
 
-   format = still_port->format;
+    format = still_port->format;
 
-   // Set our stills format on the stills (for encoder) port
-   format->encoding = MMAL_ENCODING_OPAQUE;
-   format->es->video.width = state->width;
-   format->es->video.height = state->height;
-   format->es->video.crop.x = 0;
-   format->es->video.crop.y = 0;
-   format->es->video.crop.width = state->width;
-   format->es->video.crop.height = state->height;
-   format->es->video.frame_rate.num = STILLS_FRAME_RATE_NUM;
-   format->es->video.frame_rate.den = STILLS_FRAME_RATE_DEN;
+    // Set our stills format on the stills (for encoder) port
+    format->encoding = MMAL_ENCODING_OPAQUE;
+    format->es->video.width = state->width;
+    format->es->video.height = state->height;
+    format->es->video.crop.x = 0;
+    format->es->video.crop.y = 0;
+    format->es->video.crop.width = state->width;
+    format->es->video.crop.height = state->height;
+    format->es->video.frame_rate.num = STILLS_FRAME_RATE_NUM;
+    format->es->video.frame_rate.den = STILLS_FRAME_RATE_DEN;
 
 
-   status = mmal_port_format_commit(still_port);
+    status = mmal_port_format_commit(still_port);
 
-   if (status != MMAL_SUCCESS)
-   {
-      vcos_log_error("camera still format couldn't be set");
-      goto error;
-   }
+    if (status != MMAL_SUCCESS)
+    {
+        vcos_log_error("camera still format couldn't be set");
+        goto error;
+    }
 
-   /* Ensure there are enough buffers to avoid dropping frames */
-   if (still_port->buffer_num < VIDEO_OUTPUT_BUFFERS_NUM)
-      still_port->buffer_num = VIDEO_OUTPUT_BUFFERS_NUM;
+    /* Ensure there are enough buffers to avoid dropping frames */
+    if (still_port->buffer_num < VIDEO_OUTPUT_BUFFERS_NUM)
+        still_port->buffer_num = VIDEO_OUTPUT_BUFFERS_NUM;
 
-   /* Enable component */
-   status = mmal_component_enable(camera);
+    /* Enable component */
+    status = mmal_component_enable(camera);
 
-   if (status != MMAL_SUCCESS)
-   {
-      vcos_log_error("camera component couldn't be enabled");
-      goto error;
-   }
+    if (status != MMAL_SUCCESS)
+    {
+        vcos_log_error("camera component couldn't be enabled");
+        goto error;
+    }
 
-   state->camera_component = camera;
+    state->camera_component = camera;
 
-   if (state->verbose)
-      fprintf(stderr, "Camera component done\n");
+    if (state->verbose)
+        fprintf(stderr, "Camera component done\n");
 
-   return status;
+    return status;
 
 error:
 
-   if (camera)
-      mmal_component_destroy(camera);
+    if (camera)
+        mmal_component_destroy(camera);
 
-   return status;
+    return status;
 }
 
 /**
@@ -511,11 +511,11 @@ error:
  */
 static void destroy_camera_component(RASPISTILL_STATE *state)
 {
-   if (state->camera_component)
-   {
-      mmal_component_destroy(state->camera_component);
-      state->camera_component = NULL;
-   }
+    if (state->camera_component)
+    {
+        mmal_component_destroy(state->camera_component);
+        state->camera_component = NULL;
+    }
 }
 
 
@@ -529,109 +529,109 @@ static void destroy_camera_component(RASPISTILL_STATE *state)
  */
 static MMAL_STATUS_T create_encoder_component(RASPISTILL_STATE *state)
 {
-   MMAL_COMPONENT_T *encoder = 0;
-   MMAL_PORT_T *encoder_input = NULL, *encoder_output = NULL;
-   MMAL_STATUS_T status;
-   MMAL_POOL_T *pool;
+    MMAL_COMPONENT_T *encoder = 0;
+    MMAL_PORT_T *encoder_input = NULL, *encoder_output = NULL;
+    MMAL_STATUS_T status;
+    MMAL_POOL_T *pool;
 
-   status = mmal_component_create(MMAL_COMPONENT_DEFAULT_IMAGE_ENCODER, &encoder);
+    status = mmal_component_create(MMAL_COMPONENT_DEFAULT_IMAGE_ENCODER, &encoder);
 
-   if (status != MMAL_SUCCESS)
-   {
-      vcos_log_error("Unable to create JPEG encoder component");
-      goto error;
-   }
+    if (status != MMAL_SUCCESS)
+    {
+        vcos_log_error("Unable to create JPEG encoder component");
+        goto error;
+    }
 
-   if (!encoder->input_num || !encoder->output_num)
-   {
-      status = MMAL_ENOSYS;
-      vcos_log_error("JPEG encoder doesn't have input/output ports");
-      goto error;
-   }
+    if (!encoder->input_num || !encoder->output_num)
+    {
+        status = MMAL_ENOSYS;
+        vcos_log_error("JPEG encoder doesn't have input/output ports");
+        goto error;
+    }
 
-   encoder_input = encoder->input[0];
-   encoder_output = encoder->output[0];
+    encoder_input = encoder->input[0];
+    encoder_output = encoder->output[0];
 
-   // We want same format on input and output
-   mmal_format_copy(encoder_output->format, encoder_input->format);
+    // We want same format on input and output
+    mmal_format_copy(encoder_output->format, encoder_input->format);
 
-   // Specify out output format
-   encoder_output->format->encoding = state->encoding;
+    // Specify out output format
+    encoder_output->format->encoding = state->encoding;
 
-   encoder_output->buffer_size = encoder_output->buffer_size_recommended;
+    encoder_output->buffer_size = encoder_output->buffer_size_recommended;
 
-   if (encoder_output->buffer_size < encoder_output->buffer_size_min)
-      encoder_output->buffer_size = encoder_output->buffer_size_min;
+    if (encoder_output->buffer_size < encoder_output->buffer_size_min)
+        encoder_output->buffer_size = encoder_output->buffer_size_min;
 
-   encoder_output->buffer_num = encoder_output->buffer_num_recommended;
+    encoder_output->buffer_num = encoder_output->buffer_num_recommended;
 
-   if (encoder_output->buffer_num < encoder_output->buffer_num_min)
-      encoder_output->buffer_num = encoder_output->buffer_num_min;
+    if (encoder_output->buffer_num < encoder_output->buffer_num_min)
+        encoder_output->buffer_num = encoder_output->buffer_num_min;
 
-   // Commit the port changes to the output port
-   status = mmal_port_format_commit(encoder_output);
+    // Commit the port changes to the output port
+    status = mmal_port_format_commit(encoder_output);
 
-   if (status != MMAL_SUCCESS)
-   {
-      vcos_log_error("Unable to set format on video encoder output port");
-      goto error;
-   }
+    if (status != MMAL_SUCCESS)
+    {
+        vcos_log_error("Unable to set format on video encoder output port");
+        goto error;
+    }
 
-   // Set the JPEG quality level
-   status = mmal_port_parameter_set_uint32(encoder_output, MMAL_PARAMETER_JPEG_Q_FACTOR, state->quality);
+    // Set the JPEG quality level
+    status = mmal_port_parameter_set_uint32(encoder_output, MMAL_PARAMETER_JPEG_Q_FACTOR, state->quality);
 
-   if (status != MMAL_SUCCESS)
-   {
-      vcos_log_error("Unable to set JPEG quality");
-      goto error;
-   }
+    if (status != MMAL_SUCCESS)
+    {
+        vcos_log_error("Unable to set JPEG quality");
+        goto error;
+    }
 
-   // Set up any required thumbnail
-   {
-      MMAL_PARAMETER_THUMBNAIL_CONFIG_T param_thumb = {{MMAL_PARAMETER_THUMBNAIL_CONFIGURATION, sizeof(MMAL_PARAMETER_THUMBNAIL_CONFIG_T)}, 0, 0, 0, 0};
+    // Set up any required thumbnail
+    {
+        MMAL_PARAMETER_THUMBNAIL_CONFIG_T param_thumb = {{MMAL_PARAMETER_THUMBNAIL_CONFIGURATION, sizeof(MMAL_PARAMETER_THUMBNAIL_CONFIG_T)}, 0, 0, 0, 0};
 
-      if ( state->thumbnailConfig.width > 0 && state->thumbnailConfig.height > 0 )
-      {
-         // Have a valid thumbnail defined
-         param_thumb.enable = 1;
-         param_thumb.width = state->thumbnailConfig.width;
-         param_thumb.height = state->thumbnailConfig.height;
-         param_thumb.quality = state->thumbnailConfig.quality;
-      }
-      status = mmal_port_parameter_set(encoder->control, &param_thumb.hdr);
-   }
+        if ( state->thumbnailConfig.width > 0 && state->thumbnailConfig.height > 0 )
+        {
+            // Have a valid thumbnail defined
+            param_thumb.enable = 1;
+            param_thumb.width = state->thumbnailConfig.width;
+            param_thumb.height = state->thumbnailConfig.height;
+            param_thumb.quality = state->thumbnailConfig.quality;
+        }
+        status = mmal_port_parameter_set(encoder->control, &param_thumb.hdr);
+    }
 
-   //  Enable component
-   status = mmal_component_enable(encoder);
+    //  Enable component
+    status = mmal_component_enable(encoder);
 
-   if (status  != MMAL_SUCCESS)
-   {
-      vcos_log_error("Unable to enable video encoder component");
-      goto error;
-   }
+    if (status  != MMAL_SUCCESS)
+    {
+        vcos_log_error("Unable to enable video encoder component");
+        goto error;
+    }
 
-   /* Create pool of buffer headers for the output port to consume */
-   pool = mmal_port_pool_create(encoder_output, encoder_output->buffer_num, encoder_output->buffer_size);
+    /* Create pool of buffer headers for the output port to consume */
+    pool = mmal_port_pool_create(encoder_output, encoder_output->buffer_num, encoder_output->buffer_size);
 
-   if (!pool)
-   {
-      vcos_log_error("Failed to create buffer header pool for encoder output port %s", encoder_output->name);
-   }
+    if (!pool)
+    {
+        vcos_log_error("Failed to create buffer header pool for encoder output port %s", encoder_output->name);
+    }
 
-   state->encoder_pool = pool;
-   state->encoder_component = encoder;
+    state->encoder_pool = pool;
+    state->encoder_component = encoder;
 
-   if (state->verbose)
-      fprintf(stderr, "Encoder component done\n");
+    if (state->verbose)
+        fprintf(stderr, "Encoder component done\n");
 
-   return status;
+    return status;
 
-   error:
+error:
 
-   if (encoder)
-      mmal_component_destroy(encoder);
+    if (encoder)
+        mmal_component_destroy(encoder);
 
-   return status;
+    return status;
 }
 
 /**
@@ -642,17 +642,17 @@ static MMAL_STATUS_T create_encoder_component(RASPISTILL_STATE *state)
  */
 static void destroy_encoder_component(RASPISTILL_STATE *state)
 {
-   // Get rid of any port buffers first
-   if (state->encoder_pool)
-   {
-      mmal_port_pool_destroy(state->encoder_component->output[0], state->encoder_pool);
-   }
+    // Get rid of any port buffers first
+    if (state->encoder_pool)
+    {
+        mmal_port_pool_destroy(state->encoder_component->output[0], state->encoder_pool);
+    }
 
-   if (state->encoder_component)
-   {
-      mmal_component_destroy(state->encoder_component);
-      state->encoder_component = NULL;
-   }
+    if (state->encoder_component)
+    {
+        mmal_component_destroy(state->encoder_component);
+        state->encoder_component = NULL;
+    }
 }
 
 /**
@@ -666,18 +666,18 @@ static void destroy_encoder_component(RASPISTILL_STATE *state)
  */
 static MMAL_STATUS_T connect_ports(MMAL_PORT_T *output_port, MMAL_PORT_T *input_port, MMAL_CONNECTION_T **connection)
 {
-   MMAL_STATUS_T status;
+    MMAL_STATUS_T status;
 
-   status =  mmal_connection_create(connection, output_port, input_port, MMAL_CONNECTION_FLAG_TUNNELLING | MMAL_CONNECTION_FLAG_ALLOCATION_ON_INPUT);
+    status =  mmal_connection_create(connection, output_port, input_port, MMAL_CONNECTION_FLAG_TUNNELLING | MMAL_CONNECTION_FLAG_ALLOCATION_ON_INPUT);
 
-   if (status == MMAL_SUCCESS)
-   {
-      status =  mmal_connection_enable(*connection);
-      if (status != MMAL_SUCCESS)
-         mmal_connection_destroy(*connection);
-   }
+    if (status == MMAL_SUCCESS)
+    {
+        status =  mmal_connection_enable(*connection);
+        if (status != MMAL_SUCCESS)
+            mmal_connection_destroy(*connection);
+    }
 
-   return status;
+    return status;
 }
 
 /**
@@ -688,8 +688,8 @@ static MMAL_STATUS_T connect_ports(MMAL_PORT_T *output_port, MMAL_PORT_T *input_
  */
 static void check_disable_port(MMAL_PORT_T *port)
 {
-   if (port && port->is_enabled)
-      mmal_port_disable(port);
+    if (port && port->is_enabled)
+        mmal_port_disable(port);
 }
 
 /**
@@ -700,12 +700,12 @@ static void check_disable_port(MMAL_PORT_T *port)
  */
 static void signal_handler(int signal_number)
 {
-   // Going to abort on all signals
-   vcos_log_error("Aborting program\n");
+    // Going to abort on all signals
+    vcos_log_error("Aborting program\n");
 
-   // Need to close any open stuff...
+    // Need to close any open stuff...
 
-   exit(255);
+    exit(255);
 }
 
 /**
@@ -713,282 +713,188 @@ static void signal_handler(int signal_number)
  */
 int main(int argc, const char **argv)
 {
-   // Our main data storage vessel..
-   RASPISTILL_STATE state;
+    // Our main data storage vessel..
+    RASPISTILL_STATE state;
 
-   MMAL_STATUS_T status = MMAL_SUCCESS;
-   MMAL_PORT_T *camera_preview_port = NULL;
-   MMAL_PORT_T *camera_video_port = NULL;
-   MMAL_PORT_T *camera_still_port = NULL;
-   MMAL_PORT_T *preview_input_port = NULL;
-   MMAL_PORT_T *encoder_input_port = NULL;
-   MMAL_PORT_T *encoder_output_port = NULL;
+    MMAL_STATUS_T status = MMAL_SUCCESS;
+    MMAL_PORT_T *camera_preview_port = NULL;
+    MMAL_PORT_T *camera_video_port = NULL;
+    MMAL_PORT_T *camera_still_port = NULL;
+    MMAL_PORT_T *preview_input_port = NULL;
+    MMAL_PORT_T *encoder_input_port = NULL;
+    MMAL_PORT_T *encoder_output_port = NULL;
 
-   bcm_host_init();
+    bcm_host_init();
+    clock_t elapsedTime;
 
-   // Register our application with the logging system
-   vcos_log_register("RaspiStill", VCOS_LOG_CATEGORY);
+    // Register our application with the logging system
+    vcos_log_register("RaspiStill", VCOS_LOG_CATEGORY);
 
-   signal(SIGINT, signal_handler);
+    cvNamedWindow("camcvWin", CV_WINDOW_AUTOSIZE);
 
-   default_status(&state);
-   state.filename = "foobar.jpg";
+    signal(SIGINT, signal_handler);
 
-   // Do we have any parameters
-   if (argc == 1)
-   {
-      fprintf(stderr, "\%s Camera App %s\n\n", basename(argv[0]), VERSION_STRING);
-      exit(0);
-   }
+    default_status(&state);
+    state.filename = "foobar.jpg";
 
-   if (state.verbose)
-   {
-      fprintf(stderr, "\n%s Camera App %s\n\n", basename(argv[0]), VERSION_STRING);
-   }
+    // Do we have any parameters
+    if (argc == 1)
+    {
+        fprintf(stderr, "\%s Camera App %s\n\n", basename(argv[0]), VERSION_STRING);
+        exit(0);
+    }
 
-   // OK, we have a nice set of parameters. Now set up our components
-   // We have three components. Camera, Preview and encoder.
-   // Camera and encoder are different in stills/video, but preview
-   // is the same so handed off to a separate module
+    if (state.verbose)
+    {
+        fprintf(stderr, "\n%s Camera App %s\n\n", basename(argv[0]), VERSION_STRING);
+    }
 
-   if ((status = create_camera_component(&state)) != MMAL_SUCCESS)
-   {
-      vcos_log_error("%s: Failed to create camera component", __func__);
-   }
-   else if ((status = raspipreview_create(&state.preview_parameters)) != MMAL_SUCCESS)
-   {
-      vcos_log_error("%s: Failed to create preview component", __func__);
-      destroy_camera_component(&state);
-   }
-   else if ((status = create_encoder_component(&state)) != MMAL_SUCCESS)
-   {
-      vcos_log_error("%s: Failed to create encode component", __func__);
-      raspipreview_destroy(&state.preview_parameters);
-      destroy_camera_component(&state);
-   }
-   else
-   {
-      PORT_USERDATA callback_data;
+    // OK, we have a nice set of parameters. Now set up our components
+    // We have three components. Camera, Preview and encoder.
+    // Camera and encoder are different in stills/video, but preview
+    // is the same so handed off to a separate module
 
-//      if (state.verbose)
-//         fprintf(stderr, "Starting component connection stage\n");
+    if ((status = create_camera_component(&state)) != MMAL_SUCCESS)
+    {
+        vcos_log_error("%s: Failed to create camera component", __func__);
+    }
+    else if ((status = raspipreview_create(&state.preview_parameters)) != MMAL_SUCCESS)
+    {
+        vcos_log_error("%s: Failed to create preview component", __func__);
+        destroy_camera_component(&state);
+    }
+    else if ((status = create_encoder_component(&state)) != MMAL_SUCCESS)
+    {
+        vcos_log_error("%s: Failed to create encode component", __func__);
+        raspipreview_destroy(&state.preview_parameters);
+        destroy_camera_component(&state);
+    }
+    else
+    {
+        PORT_USERDATA callback_data;
 
-      camera_preview_port = NULL; //state.camera_component->output[MMAL_CAMERA_PREVIEW_PORT];
-      camera_video_port   = state.camera_component->output[MMAL_CAMERA_VIDEO_PORT];
-      camera_still_port   = state.camera_component->output[MMAL_CAMERA_CAPTURE_PORT];
-      preview_input_port = state.preview_parameters.preview_component->input[0];
-      encoder_input_port  = state.encoder_component->input[0];
-      encoder_output_port = state.encoder_component->output[0];
+        //      if (state.verbose)
+        //         fprintf(stderr, "Starting component connection stage\n");
 
-      // Note we are lucky that the preview and null sink components use the same input port
-      // so we can simple do this without conditionals
-      preview_input_port  = state.preview_parameters.preview_component->input[0];
+        camera_preview_port = NULL; //state.camera_component->output[MMAL_CAMERA_PREVIEW_PORT];
+        camera_video_port   = state.camera_component->output[MMAL_CAMERA_VIDEO_PORT];
+        camera_still_port   = state.camera_component->output[MMAL_CAMERA_CAPTURE_PORT];
+        encoder_input_port  = state.encoder_component->input[0];
+        encoder_output_port = state.encoder_component->output[0];
 
-      // Connect camera to preview (which might be a null_sink if no preview required)
-      //status = connect_ports(camera_preview_port, preview_input_port, &state.preview_connection);
+        // Note we are lucky that the preview and null sink components use the same input port
+        // so we can simple do this without conditionals
+        preview_input_port  = state.preview_parameters.preview_component->input[0];
 
-      if (status == MMAL_SUCCESS)
-      {
-         VCOS_STATUS_T vcos_status;
+        // Connect camera to preview (which might be a null_sink if no preview required)
+        //status = connect_ports(camera_preview_port, preview_input_port, &state.preview_connection);
 
-         if (state.verbose)
-            fprintf(stderr, "Connecting camera stills port to encoder input port\n");
+        VCOS_STATUS_T vcos_status;
 
-         // Now connect the camera to the encoder
-         status = connect_ports(camera_still_port, encoder_input_port, &state.encoder_connection);
+        // Now connect the camera to the encoder
+        status = connect_ports(camera_still_port, encoder_input_port, &state.encoder_connection);
 
-         if (status != MMAL_SUCCESS)
-         {
+        if (status != MMAL_SUCCESS)
+        {
             vcos_log_error("%s: Failed to connect camera video port to encoder input", __func__);
             goto error;
-         }
+        }
 
-         // Set up our userdata - this is passed though to the callback where we need the information.
-         // Null until we open our filename
-         callback_data.file_handle = NULL;
-         callback_data.pstate = &state;
-         vcos_status = vcos_semaphore_create(&callback_data.complete_semaphore, "RaspiStill-sem", 0);
+        // Set up our userdata - this is passed though to the callback where we need the information.
+        // Null until we open our filename
+        //callback_data.file_handle = NULL;
+        callback_data.pstate = &state;
+        vcos_status = vcos_semaphore_create(&callback_data.complete_semaphore, "RaspiStill-sem", 0);
 
-         vcos_assert(vcos_status == VCOS_SUCCESS);
+        vcos_assert(vcos_status == VCOS_SUCCESS);
 
-         if (status != MMAL_SUCCESS)
-         {
+        encoder_output_port->userdata = (struct MMAL_PORT_USERDATA_T *)&callback_data;
+
+        // Enable the encoder output port and tell it its callback function
+        status = mmal_port_enable(encoder_output_port, encoder_buffer_callback);
+
+        if (status != MMAL_SUCCESS)
+        {
             vcos_log_error("Failed to setup encoder output");
             goto error;
-         }
+        }
 
-         if (state.demoMode)
-         {
-            // Run for the user specific time..
-            int num_iterations = state.timeout / state.demoInterval;
-            int i;
-            for (i=0;i<num_iterations;i++)
+
+        int num_iterations =  100;
+        int frame,num,q;
+        elapsedTime= clock();
+        printf("time=%d\n",elapsedTime);
+
+        for (frame = 1;frame<=num_iterations; frame++)
+        {
+            // Send all the buffers to the encoder output port
+            num = mmal_queue_length(state.encoder_pool->queue);
+
+            for (q=0;q<num;q++)
             {
-               raspicamcontrol_cycle_test(state.camera_component);
-               vcos_sleep(state.demoInterval);
+                MMAL_BUFFER_HEADER_T *buffer = mmal_queue_get(state.encoder_pool->queue);
+
+                //if (!buffer)
+                // vcos_log_error("Unable to get a required buffer %d from pool queue", q);
+
+                if (mmal_port_send_buffer(encoder_output_port, buffer)!= MMAL_SUCCESS)
+                    vcos_log_error("Unable to send a buffer to encoder output port (%d)", q);
             }
-         }
-         else
-         {
-            int num_iterations =  state.timelapse ? state.timeout / state.timelapse : 1;
-            int frame;
-            FILE *output_file = NULL;
 
-            for (frame = 1;frame<=num_iterations; frame++)
+
+            if (mmal_port_parameter_set_boolean(camera_still_port, MMAL_PARAMETER_CAPTURE, 1) != MMAL_SUCCESS)
             {
-               if (state.timelapse)
-                  vcos_sleep(state.timelapse);
-               else
-                  vcos_sleep(state.timeout);
+                vcos_log_error("%s: Failed to start capture", __func__);
+            }
+            else
+            {
+                // Wait for capture to complete
+                // For some reason using vcos_semaphore_wait_timeout sometimes returns immediately with bad parameter error
+                // even though it appears to be all correct, so reverting to untimed one until figure out why its erratic
+                vcos_semaphore_wait(&callback_data.complete_semaphore);
+            }
 
-               // Open the file
-               if (state.filename)
-               {
-		            if (state.filename[0] == '-')
-    		         {
-		               output_file = stdout;
+        } // end for (frame)
 
-		               // Ensure we don't upset the output stream with diagnostics/info
-		               state.verbose = 0;
-    		         }
-                  else
-                  {
-                     char *use_filename = state.filename;
-	
-	                  if (state.timelapse)
-	                     asprintf(&use_filename, state.filename, frame);
-	
-	                  if (state.verbose)
-	                     fprintf(stderr, "Opening output file %s\n", use_filename);
-	
-	                  output_file = fopen(use_filename, "wb");
-	
-	                  if (!output_file)
-	                  {
-	                     // Notify user, carry on but discarding encoded output buffers
-	                     vcos_log_error("%s: Error opening output file: %s\nNo output file will be generated\n", __func__, use_filename);
-	                  }
-
-	                  // asprintf used in timelapse mode allocates its own memory which we need to free
-	                  if (state.timelapse)
-	                     free(use_filename);
-                  }
-									
-                  callback_data.file_handle = output_file;
-               }
-
-               // We only capture if a filename was specified and it opened
-               if (output_file)
-               {
-                  int num, q;
-
-                  // Same with raw, apparently need to set it for each capture, whilst port
-                  // is not enabled
-                  if (state.wantRAW)
-                  {
-                     if (mmal_port_parameter_set_boolean(camera_still_port, MMAL_PARAMETER_ENABLE_RAW_CAPTURE, 1) != MMAL_SUCCESS)
-                     {
-                        vcos_log_error("RAW was requested, but failed to enable");
-                     }
-                  }
-
-                  // Enable the encoder output port
-                  encoder_output_port->userdata = (struct MMAL_PORT_USERDATA_T *)&callback_data;
-
-                  if (state.verbose)
-                     fprintf(stderr, "Enabling encoder output port\n");
-
-                  // Enable the encoder output port and tell it its callback function
-                  status = mmal_port_enable(encoder_output_port, encoder_buffer_callback);
-
-                  // Send all the buffers to the encoder output port
-                  num = mmal_queue_length(state.encoder_pool->queue);
-
-                  for (q=0;q<num;q++)
-                  {
-                     MMAL_BUFFER_HEADER_T *buffer = mmal_queue_get(state.encoder_pool->queue);
-
-                     if (!buffer)
-                        vcos_log_error("Unable to get a required buffer %d from pool queue", q);
-
-                     if (mmal_port_send_buffer(encoder_output_port, buffer)!= MMAL_SUCCESS)
-                        vcos_log_error("Unable to send a buffer to encoder output port (%d)", q);
-                  }
-
-                  if (state.verbose)
-                     fprintf(stderr, "Starting capture %d\n", frame);
-
-                  if (mmal_port_parameter_set_boolean(camera_still_port, MMAL_PARAMETER_CAPTURE, 1) != MMAL_SUCCESS)
-                  {
-                     vcos_log_error("%s: Failed to start capture", __func__);
-                  }
-                  else
-                  {
-                     // Wait for capture to complete
-                     // For some reason using vcos_semaphore_wait_timeout sometimes returns immediately with bad parameter error
-                     // even though it appears to be all correct, so reverting to untimed one until figure out why its erratic
-                     vcos_semaphore_wait(&callback_data.complete_semaphore);
-                     if (state.verbose)
-                        fprintf(stderr, "Finished capture %d\n", frame);
-                  }
-
-                  // Ensure we don't die if get callback with no open file
-                  callback_data.file_handle = NULL;
-
-                  if (output_file != stdout)
-                     fclose(output_file);
-
-                  // Disable encoder output port
-                  status = mmal_port_disable(encoder_output_port);
-               }
-
-            } // end for (frame)
-
-            vcos_semaphore_delete(&callback_data.complete_semaphore);
-         }
-      }
-      else
-      {
-         mmal_status_to_int(status);
-         vcos_log_error("%s: Failed to connect camera to preview", __func__);
-      }
+        vcos_semaphore_delete(&callback_data.complete_semaphore);
+        // compute elapsed time since begin of the loop and display
 
 error:
 
-      mmal_status_to_int(status);
+        mmal_status_to_int(status);
 
-      if (state.verbose)
-         fprintf(stderr, "Closing down\n");
+        if (state.verbose)
+            fprintf(stderr, "Closing down\n");
 
-      // Disable all our ports that are not handled by connections
-      check_disable_port(camera_video_port);
-      check_disable_port(encoder_output_port);
+        // Disable all our ports that are not handled by connections
+        check_disable_port(camera_video_port);
+        check_disable_port(encoder_output_port);
 
-      //mmal_connection_destroy(state.preview_connection);
+        //mmal_connection_destroy(state.preview_connection);
 
-      mmal_connection_destroy(state.encoder_connection);
+        mmal_connection_destroy(state.encoder_connection);
 
-      /* Disable components */
-      if (state.encoder_component)
-         mmal_component_disable(state.encoder_component);
+        /* Disable components */
+        if (state.encoder_component)
+            mmal_component_disable(state.encoder_component);
 
-      if (state.preview_parameters.preview_component)
-         mmal_component_disable(state.preview_parameters.preview_component);
+        if (state.preview_parameters.preview_component)
+            mmal_component_disable(state.preview_parameters.preview_component);
 
-      if (state.camera_component)
-         mmal_component_disable(state.camera_component);
+        if (state.camera_component)
+            mmal_component_disable(state.camera_component);
 
-      destroy_encoder_component(&state);
-      raspipreview_destroy(&state.preview_parameters);
-      destroy_camera_component(&state);
+        destroy_encoder_component(&state);
+        raspipreview_destroy(&state.preview_parameters);
+        destroy_camera_component(&state);
 
-      if (state.verbose)
-         fprintf(stderr, "Close down completed, all components disconnected, disabled and destroyed\n\n");
-   }
+        if (state.verbose)
+            fprintf(stderr, "Close down completed, all components disconnected, disabled and destroyed\n\n");
+    }
 
-   if (status != MMAL_SUCCESS)
-      raspicamcontrol_check_configuration(128);
-      
-   return 0;
+    if (status != MMAL_SUCCESS)
+        raspicamcontrol_check_configuration(128);
+
+    return 0;
 }
 
