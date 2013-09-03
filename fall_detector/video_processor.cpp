@@ -19,12 +19,17 @@ VideoProcessor::VideoProcessor()
 
     mErodeElementSize = 3;
     mErodeIterations = 2;
+    erode_element = getStructuringElement(MORPH_ELLIPSE, Size(mErodeElementSize, mErodeElementSize));
+
     mDilateElementSize = 8;
     mDilateIterations = 2;
+    dilate_element = getStructuringElement(MORPH_ELLIPSE, Size(mDilateElementSize, mDilateElementSize));
 
     mHistory = 3000; // TODO: maybe even more
     mThreshold = 16;
     mpBackgroundSubtractor = new BackgroundSubtractorMOG2(mHistory, mThreshold);
+
+    mShowAdditionalGui = false;
 }
 
 VideoProcessor::~VideoProcessor()
@@ -82,26 +87,25 @@ void VideoProcessor::RunWithGui()
         string name_foreground_mask = "Foreground Mask";
         string name_erode_mask = "Erode Mask";
         string name_dilate_mask = "Dilate Mask";
-
         string name_mhi = "MHI";
 
         startWindowThread();
 
         namedWindow(name_original_frame, CV_WINDOW_AUTOSIZE);
-        namedWindow(name_foreground_mask, CV_WINDOW_AUTOSIZE);
-        namedWindow(name_dilate_mask, CV_WINDOW_AUTOSIZE);
-        namedWindow(name_erode_mask, CV_WINDOW_AUTOSIZE);
 
-        namedWindow(name_mhi, CV_WINDOW_AUTOSIZE);
+        if(mShowAdditionalGui)
+        {
+            namedWindow(name_foreground_mask, CV_WINDOW_AUTOSIZE);
+            namedWindow(name_dilate_mask, CV_WINDOW_AUTOSIZE);
+            namedWindow(name_erode_mask, CV_WINDOW_AUTOSIZE);
+            namedWindow(name_mhi, CV_WINDOW_AUTOSIZE);
 
-        createTrackbar("Erode element size", name_erode_mask,
-                       &mErodeElementSize, 50);
-        createTrackbar("Erode iterations", name_erode_mask,
-                       &mErodeIterations, 50);
-        createTrackbar("Dilate element size", name_dilate_mask,
-                       &mDilateElementSize, 50);
-        createTrackbar("Dilate iterations", name_dilate_mask,
-                       &mDilateIterations, 50);
+            createTrackbar("Erode element size", name_erode_mask, &mErodeElementSize, 50);
+            createTrackbar("Erode iterations", name_erode_mask, &mErodeIterations, 50);
+            createTrackbar("Dilate element size", name_dilate_mask, &mDilateElementSize, 50);
+            createTrackbar("Dilate iterations", name_dilate_mask, &mDilateIterations, 50);
+        }
+
 
         mIntervalProcessor.StartTracking();
 
@@ -125,13 +129,16 @@ void VideoProcessor::RunWithGui()
                     Point(0, 20), 1, 1, colour, 2);
 
             imshow(name_original_frame, mOriginalFrame);
-            imshow(name_foreground_mask, mForegroundMask);
-            imshow(name_dilate_mask, mDilateMask);
-            imshow(name_erode_mask, mErodeMask);
 
-            imshow(name_mhi, mMhiMask);
+            if(mShowAdditionalGui)
+            {
+                imshow(name_foreground_mask, mForegroundMask);
+                imshow(name_dilate_mask, mDilateMask);
+                imshow(name_erode_mask, mErodeMask);
+                imshow(name_mhi, mMhiMask);
+            }
 
-            waitKey(30);
+            waitKey(1);
         }
     }
     catch(thread_interrupted&)
@@ -178,25 +185,40 @@ void VideoProcessor::ProcessFrame()
 
     (*mpBackgroundSubtractor)(mOriginalFrame, mForegroundMask);
 
-    // Removes shadows
-    threshold(mForegroundMask, mThresholdMask, 127, 255, THRESH_BINARY);
-
-    // Morphological transformation
-    Mat erode_element = getStructuringElement(MORPH_ELLIPSE, Size(mErodeElementSize, mErodeElementSize));
-    erode(mThresholdMask, mErodeMask, erode_element, Point(-1, -1), mErodeIterations);
-
-    dilate(mErodeMask, mErodeMask, erode_element, Point(-1, -1), mErodeIterations);
-
-    Mat dilate_element = getStructuringElement(MORPH_ELLIPSE, Size(mDilateElementSize, mDilateElementSize));
-    dilate(mErodeMask, mDilateMask, dilate_element, Point(-1, -1), mDilateIterations);
-
-    erode(mDilateMask, mDilateMask, dilate_element, Point(-1, -1), mDilateIterations);
-
-    // Contours
-    mDilateMask.copyTo(mContoursMask);
     vector<vector<Point> > contours;
     vector<Vec4i> hierarchy;
-    findContours(mContoursMask, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
+
+    if(mShowAdditionalGui)
+    {
+        // Removes shadows
+        threshold(mForegroundMask, mThresholdMask, 127, 255, THRESH_BINARY);
+
+        // Morphological transformation
+        erode_element = getStructuringElement(MORPH_ELLIPSE, Size(mErodeElementSize, mErodeElementSize));
+        erode(mThresholdMask, mErodeMask, erode_element, Point(-1, -1), mErodeIterations);
+        dilate(mErodeMask, mErodeMask, erode_element, Point(-1, -1), mErodeIterations);
+
+        dilate_element = getStructuringElement(MORPH_ELLIPSE, Size(mDilateElementSize, mDilateElementSize));
+        dilate(mErodeMask, mDilateMask, dilate_element, Point(-1, -1), mDilateIterations);
+        erode(mDilateMask, mDilateMask, dilate_element, Point(-1, -1), mDilateIterations);
+
+        // Contours
+        mDilateMask.copyTo(mContoursMask);
+        findContours(mContoursMask, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
+    }
+    else
+    {
+        threshold(mForegroundMask, mForegroundMask, 127, 255, THRESH_BINARY);
+
+        erode(mForegroundMask, mForegroundMask, erode_element, Point(-1, -1), mErodeIterations);
+        dilate(mForegroundMask, mForegroundMask, erode_element, Point(-1, -1), mErodeIterations);
+
+        dilate(mForegroundMask, mForegroundMask, dilate_element, Point(-1, -1), mDilateIterations);
+        erode(mForegroundMask, mForegroundMask, dilate_element, Point(-1, -1), mDilateIterations);
+
+        findContours(mForegroundMask, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
+    }
+
     drawContours(mOriginalFrame, contours, -1, Scalar(0, 0, 255), 2);
 
     // Object detection
@@ -226,11 +248,7 @@ void VideoProcessor::ProcessFrame()
 
     if(mObjectFound)
     {
-        coefficient_of_motion = CalculateCoefficientOfMotion(mDilateMask, mMhiMask);
-    }
-
-    if(mObjectFound)
-    {
+        //        coefficient_of_motion = CalculateCoefficientOfMotion(mDilateMask, mMhiMask);
         mIntervalProcessor.Include(FrameInfo(coefficient_of_motion, optional<RotatedRect>(mRotatedRectangle)));
     }
     else

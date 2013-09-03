@@ -44,8 +44,13 @@ private:
 
     cv::Mat mMhiMask;
 
+    bool mShowAdditionalGui;
+
+    cv::Mat erode_element;
     int mErodeElementSize;
     int mErodeIterations;
+
+    cv::Mat dilate_element;
     int mDilateElementSize;
     int mDilateIterations;
 

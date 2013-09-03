@@ -88,8 +88,21 @@ void IntervalProcessor::Include(FrameInfo frameInfo)
                 }
                 else
                 {
-                    mFiniteStateMachine.MoveToState(WALKING);
+                    if(mFiniteStateMachine.GetHumanState() == STANDING
+                       || mFiniteStateMachine.GetHumanState() == WALKING)
+                    {
+                        mFiniteStateMachine.MoveToState(WALKING);
+                    }
+                    else
+                    {
+                        if(mFiniteStateMachine.GetHumanState() == FALLING
+                           || mFiniteStateMachine.GetHumanState() == LYING)
+                        {
+                            mFiniteStateMachine.MoveToState(FALLING);
+                        }
+                    }
                 }
+
             }
         }
         else
