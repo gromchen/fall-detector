@@ -22,7 +22,7 @@ VideoProcessor::VideoProcessor()
     mDilateElementSize = 8;
     mDilateIterations = 2;
 
-    mHistory = 600; // TODO: maybe even more
+    mHistory = 3000; // TODO: maybe even more
     mThreshold = 16;
     mpBackgroundSubtractor = new BackgroundSubtractorMOG2(mHistory, mThreshold);
 }
@@ -185,12 +185,12 @@ void VideoProcessor::ProcessFrame()
     Mat erode_element = getStructuringElement(MORPH_ELLIPSE, Size(mErodeElementSize, mErodeElementSize));
     erode(mThresholdMask, mErodeMask, erode_element, Point(-1, -1), mErodeIterations);
 
-//    dilate(mErodeMask, mErodeMask, erode_element, Point(-1, -1), mErodeIterations);
+    dilate(mErodeMask, mErodeMask, erode_element, Point(-1, -1), mErodeIterations);
 
     Mat dilate_element = getStructuringElement(MORPH_ELLIPSE, Size(mDilateElementSize, mDilateElementSize));
     dilate(mErodeMask, mDilateMask, dilate_element, Point(-1, -1), mDilateIterations);
 
-//    erode(mDilateMask, mDilateMask, dilate_element, Point(-1, -1), mDilateIterations);
+    erode(mDilateMask, mDilateMask, dilate_element, Point(-1, -1), mDilateIterations);
 
     // Contours
     mDilateMask.copyTo(mContoursMask);
