@@ -22,6 +22,7 @@ private:
     boost::thread* mpProcessing;
     bool mRunning;
     bool mShowGui;
+    bool mUseCameraBoard;
 };
 }
 

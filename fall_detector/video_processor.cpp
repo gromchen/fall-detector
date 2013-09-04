@@ -4,6 +4,13 @@
 
 #include "helpers.h"
 
+#ifdef RPI_CAMERA
+extern "C"
+{
+    #include "camera_board.h"
+}
+#endif
+
 using namespace std;
 using namespace boost;
 using namespace boost::chrono;
@@ -149,6 +156,22 @@ void VideoProcessor::RunWithGui()
         {
             mVideoCapture.release();
         }
+
+        mIntervalProcessor.Reset();
+    }
+}
+
+void VideoProcessor::RunCameraBoard()
+{
+    try
+    {
+#ifdef RPI_CAMERA
+        StartCameraBoard();
+#endif
+    }
+    catch(thread_interrupted&)
+    {
+        //        destroyAllWindows();
 
         mIntervalProcessor.Reset();
     }

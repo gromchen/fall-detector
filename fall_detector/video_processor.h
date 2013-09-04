@@ -13,6 +13,7 @@ public:
 
     void RunWithoutGui();
     void RunWithGui();
+    void RunCameraBoard();
 
     void SetResolution(int width, int height);
     std::string GetResolution();

@@ -80,10 +80,17 @@ void Application::Run()
             switch (key)
             {
             case 's':
-                if(mShowGui)
-                    mpProcessing = new boost::thread(&VideoProcessor::RunWithGui, &(mVideoProcessor));
+                if(mUseCameraBoard)
+                {
+                    mpProcessing = new boost::thread(&VideoProcessor::RunCameraBoard, &(mVideoProcessor));
+                }
                 else
-                    mpProcessing = new boost::thread(&VideoProcessor::RunWithoutGui, &(mVideoProcessor));
+                {
+                    if(mShowGui)
+                        mpProcessing = new boost::thread(&VideoProcessor::RunWithGui, &(mVideoProcessor));
+                    else
+                        mpProcessing = new boost::thread(&VideoProcessor::RunWithoutGui, &(mVideoProcessor));
+                }
 
                 mRunning = true;
                 break;
@@ -104,6 +111,9 @@ void Application::Run()
                 cout << "Input threshold: ";
                 cin >> threshold;
                 mVideoProcessor.CreateNewBackgroundSubtractor(history, threshold);
+                break;
+            case 'd':
+                mUseCameraBoard = !mUseCameraBoard;
                 break;
             case 'q':
                 stop = true;
