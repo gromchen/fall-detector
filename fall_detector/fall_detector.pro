@@ -61,10 +61,13 @@ linux-g++ {
 linux-rasp-pi-g++ {
     QMAKE_RPATHDIR += /home/gromchen/rpi/usr/lib \
         /home/gromchen/rpi/usr/lib/arm-linux-gnueabihf \
-        /home/gromchen/rpi/usr/local/lib
+        /home/gromchen/rpi/usr/local/lib \
+        /home/pi/Desktop/pi
 
     INCLUDEPATH += /home/gromchen/rpi/include \
         /home/gromchen/git_hub/fall-detector/fall_detector_lib
+
+    DEPENDPATH += . /home/gromchen/git_hub/fall-detector/fall_detector_lib
 
     LIBS += -L/home/gromchen/rpi/usr/lib \
         -lopencv_highgui \

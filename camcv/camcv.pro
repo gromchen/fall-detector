@@ -28,7 +28,8 @@ HEADERS += \
 
 QMAKE_RPATHDIR += /home/gromchen/rpi/usr/lib \
     /home/gromchen/rpi/usr/lib/arm-linux-gnueabihf \
-    /home/gromchen/rpi/usr/local/lib
+    /home/gromchen/rpi/usr/local/lib \
+    /home/pi/Desktop/pi
 
 INCLUDEPATH += /home/gromchen/rpi/opt/vc/host_applications/linux/libs/bcm_host/include \
     /home/gromchen/rpi/opt/vc/interface/vcos \

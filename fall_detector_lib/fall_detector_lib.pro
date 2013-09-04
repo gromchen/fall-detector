@@ -61,20 +61,7 @@ linux-rasp-pi-g++ {
         /home/gromchen/rpi/usr/lib/arm-linux-gnueabihf \
         /home/gromchen/rpi/usr/local/lib
 
-    INCLUDEPATH += /home/gromchen/rpi/include \
-        /home/gromchen/rpi/opt/vc/host_applications/linux/libs/bcm_host/include \
-        /home/gromchen/rpi/opt/vc/interface/vcos \
-        /home/gromchen/rpi/opt/vc \
-        /home/gromchen/rpi/opt/vc/interface/vcos/pthreads \
-        /home/gromchen/rpi/opt/vc/interface/vmcs_host/linux \
-        /home/gromchen/rpi/include
-
-    LIBS += -L/home/gromchen/rpi/opt/vc/lib \
-        -lmmal_core \
-        -lmmal_util \
-        -lmmal_vc_client \
-        -lvcos \
-        -lbcm_host
+    INCLUDEPATH += /home/gromchen/rpi/include
 
     LIBS += -L/home/gromchen/rpi/usr/lib \
         -lopencv_highgui \

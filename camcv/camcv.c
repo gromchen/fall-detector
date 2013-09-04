@@ -1,4 +1,3 @@
-
 /////////////////////////////////////////////////////////////
 // Many source code lines are copied from RaspiVid.c
 // Copyright (c) 2012, Broadcom Europe Ltd
@@ -39,7 +38,6 @@
 #include "RaspiCamControl.h"
 #include "RaspiPreview.h"
 #include "RaspiCLI.h"
-#include "fall_detector_lib.h"
 
 #include <semaphore.h>
 
@@ -171,10 +169,6 @@ static void video_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffe
             cvMerge(py, pu_big, pv_big, NULL, image);
 
             cvCvtColor(image,dstImage,CV_YCrCb2RGB);	// convert in RGB color space (slow)
-
-            void* obj;
-            StartProcessing(0, obj);
-
             cvShowImage("camcvWin", dstImage );
         }
         else
@@ -452,7 +446,7 @@ static void signal_handler(int signal_number)
 /**
  * main
  */
-int main(int argc, const char **argv)
+int main()
 {
     // Our main data storage vessel..
     RASPIVID_STATE state;
@@ -460,7 +454,6 @@ int main(int argc, const char **argv)
     MMAL_STATUS_T status = -1;
     MMAL_PORT_T *camera_video_port = NULL;
     MMAL_PORT_T *camera_still_port = NULL;
-    MMAL_PORT_T *preview_input_port = NULL;
     MMAL_PORT_T *encoder_input_port = NULL;
     MMAL_PORT_T *encoder_output_port = NULL;
 
@@ -491,11 +484,11 @@ int main(int argc, const char **argv)
     {
        vcos_log_error("%s: Failed to create camera component", __func__);
     }
-    else if (!raspipreview_create(&state.preview_parameters))
-    {
-       vcos_log_error("%s: Failed to create preview component", __func__);
-       destroy_camera_component(&state);
-    }
+//    else if (!raspipreview_create(&state.preview_parameters))
+//    {
+//       vcos_log_error("%s: Failed to create preview component", __func__);
+//       destroy_camera_component(&state);
+//    }
     else
     {
         PORT_USERDATA callback_data;
@@ -575,4 +568,3 @@ error:
 
    return 0;
 }
-
