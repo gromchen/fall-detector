@@ -1,15 +1,8 @@
-#include "video_processor.h"
+#include "fall_detector_lib.h"
 
 #include <boost/thread/thread.hpp>
 
 #include "helpers.h"
-
-#ifdef RPI_CAMERA
-extern "C"
-{
-    #include "camera_board.h"
-}
-#endif
 
 using namespace std;
 using namespace boost;
@@ -161,22 +154,6 @@ void VideoProcessor::RunWithGui()
     }
 }
 
-void VideoProcessor::RunCameraBoard()
-{
-    try
-    {
-#ifdef RPI_CAMERA
-        StartCameraBoard();
-#endif
-    }
-    catch(thread_interrupted&)
-    {
-        //        destroyAllWindows();
-
-        mIntervalProcessor.Reset();
-    }
-}
-
 void VideoProcessor::SetResolution(int width, int height)
 {
     mFrameWidth = width;
@@ -258,7 +235,7 @@ void VideoProcessor::ProcessFrame()
             double area = object_moments.m00;
 
             if(area > mcMinAreaOfObject && area < mMaxAreaOfObject && area > reference_area
-               && contours[i_contour].size() > 5)
+                    && contours[i_contour].size() > 5)
             {
                 mRotatedRectangle = fitEllipse(Mat(contours[i_contour]));
                 mObjectFound = true;
@@ -319,4 +296,16 @@ double VideoProcessor::CalculateCoefficientOfMotion(Mat &silhouette, Mat &mhiMas
 
     return c_motion;
 }
+}
+
+void StartProcessing(int, void *ob)
+{
+    FallDetector::VideoProcessor *p_video_processor = static_cast<FallDetector::VideoProcessor *>(ob);
+
+    if(p_video_processor == NULL)
+    {
+        p_video_processor = new FallDetector::VideoProcessor();
+    }
+
+    p_video_processor->ProcessFrame();
 }

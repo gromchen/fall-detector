@@ -3,10 +3,8 @@
 
 #include <boost/thread.hpp>
 
-#include "video_processor.h"
+#include "fall_detector_lib.h"
 
-namespace FallDetector
-{
 class Application
 {
 public:
@@ -18,12 +16,10 @@ public:
 private:
     void handleResolution();
 
-    VideoProcessor mVideoProcessor;
+    FallDetector::VideoProcessor mVideoProcessor;
     boost::thread* mpProcessing;
     bool mRunning;
     bool mShowGui;
-    bool mUseCameraBoard;
 };
-}
 
 #endif // FALL_DETECTOR_APPLICATION_H

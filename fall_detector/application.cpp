@@ -1,9 +1,8 @@
 #include "application.h"
 
 using namespace std;
+using namespace FallDetector;
 
-namespace FallDetector
-{
 Application::Application()
 {
     mpProcessing = NULL;
@@ -80,16 +79,13 @@ void Application::Run()
             switch (key)
             {
             case 's':
-                if(mUseCameraBoard)
+                if(mShowGui)
                 {
-                    mpProcessing = new boost::thread(&VideoProcessor::RunCameraBoard, &(mVideoProcessor));
+                    mpProcessing = new boost::thread(&VideoProcessor::RunWithGui, &(mVideoProcessor));
                 }
                 else
                 {
-                    if(mShowGui)
-                        mpProcessing = new boost::thread(&VideoProcessor::RunWithGui, &(mVideoProcessor));
-                    else
-                        mpProcessing = new boost::thread(&VideoProcessor::RunWithoutGui, &(mVideoProcessor));
+                    mpProcessing = new boost::thread(&VideoProcessor::RunWithoutGui, &(mVideoProcessor));
                 }
 
                 mRunning = true;
@@ -111,9 +107,6 @@ void Application::Run()
                 cout << "Input threshold: ";
                 cin >> threshold;
                 mVideoProcessor.CreateNewBackgroundSubtractor(history, threshold);
-                break;
-            case 'd':
-                mUseCameraBoard = !mUseCameraBoard;
                 break;
             case 'q':
                 stop = true;
@@ -159,5 +152,4 @@ void Application::handleResolution()
             break;
         }
     }
-}
 }

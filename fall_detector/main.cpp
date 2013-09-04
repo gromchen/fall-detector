@@ -1,7 +1,6 @@
 #include "application.h"
 
 using namespace std;
-using namespace FallDetector;
 
 int main()
 {

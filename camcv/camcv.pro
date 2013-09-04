@@ -35,7 +35,8 @@ INCLUDEPATH += /home/gromchen/rpi/opt/vc/host_applications/linux/libs/bcm_host/i
     /home/gromchen/rpi/opt/vc \
     /home/gromchen/rpi/opt/vc/interface/vcos/pthreads \
     /home/gromchen/rpi/opt/vc/interface/vmcs_host/linux \
-    /home/gromchen/rpi/include
+    /home/gromchen/rpi/include \
+    /home/gromchen/git_hub/fall-detector/fall_detector_lib
 
 LIBS += -L/home/gromchen/rpi/opt/vc/lib \
     -lmmal_core \
@@ -51,6 +52,9 @@ LIBS += -L/home/gromchen/rpi/usr/lib \
     -lopencv_calib3d \
     -lopencv_video \
     -lopencv_imgproc
+
+LIBS += -L/home/gromchen/Qt_builds/fall_detector_lib/rpi/release \
+    -lfall_detector_lib
 
 target.path = ./Qt_deploy/
 INSTALLS += target

@@ -16,28 +16,10 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp \
-    application.cpp \
-    video_processor.cpp \
-    data_collector.cpp \
-    interval_processor.cpp \
-    finite_state_machine.cpp \
-    feature.cpp \
-    frame_info.cpp \
-    feature_collection.cpp \
-    interval_info.cpp \
-    helpers.cpp
+    application.cpp
 
 HEADERS += \
-    application.h \
-    video_processor.h \
-    helpers.h \
-    data_collector.h \
-    interval_processor.h \
-    finite_state_machine.h \
-    feature.h \
-    interval_info.h \
-    feature_collection.h \
-    frame_info.h
+    application.h
 
 win32 {
     INCLUDEPATH += $(OPENCV_DIR)\include \
@@ -59,7 +41,8 @@ win32 {
 }
 
 linux-g++ {
-    INCLUDEPATH += /usr/local/include
+    INCLUDEPATH += /usr/local/include \
+        /home/gromchen/git_hub/fall-detector/fall_detector_lib
 
     LIBS += -L/usr/local/lib \
         -lboost_thread \
@@ -70,37 +53,18 @@ linux-g++ {
         -lopencv_calib3d \
         -lopencv_video \
         -lopencv_imgproc
+
+    LIBS += -L/home/gromchen/Qt_builds/fall_detector_lib/desktop/release \
+        -lfall_detector_lib
 }
 
 linux-rasp-pi-g++ {
-    SOURCES += RaspiCamControl.c \
-        RaspiCLI.c \
-        RaspiPreview.c \
-        camera_board.c
-
-    HEADERS += RaspiCamControl.h \
-        RaspiCLI.h \
-        RaspiPreview.h \
-        camera_board.h
-
     QMAKE_RPATHDIR += /home/gromchen/rpi/usr/lib \
         /home/gromchen/rpi/usr/lib/arm-linux-gnueabihf \
         /home/gromchen/rpi/usr/local/lib
 
     INCLUDEPATH += /home/gromchen/rpi/include \
-        /home/gromchen/rpi/opt/vc/host_applications/linux/libs/bcm_host/include \
-        /home/gromchen/rpi/opt/vc/interface/vcos \
-        /home/gromchen/rpi/opt/vc \
-        /home/gromchen/rpi/opt/vc/interface/vcos/pthreads \
-        /home/gromchen/rpi/opt/vc/interface/vmcs_host/linux \
-        /home/gromchen/rpi/include
-
-    LIBS += -L/home/gromchen/rpi/opt/vc/lib \
-        -lmmal_core \
-        -lmmal_util \
-        -lmmal_vc_client \
-        -lvcos \
-        -lbcm_host
+        /home/gromchen/git_hub/fall-detector/fall_detector_lib
 
     LIBS += -L/home/gromchen/rpi/usr/lib \
         -lopencv_highgui \
@@ -115,8 +79,9 @@ linux-rasp-pi-g++ {
         -lboost_thread \
         -lboost_chrono
 
+    LIBS += -L/home/gromchen/Qt_builds/fall_detector_lib/rpi/release \
+        -lfall_detector_lib
+
      target.path = ./Qt_deploy/
      INSTALLS += target
-
-    DEFINES += "RPI_CAMERA=1"
 }

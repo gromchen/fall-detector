@@ -1,12 +1,17 @@
-#ifndef FALL_DETECTOR_VIDEO_PROCESSOR_H
-#define FALL_DETECTOR_VIDEO_PROCESSOR_H
+#ifndef FALL_DETECTOR_LIB_H
+#define FALL_DETECTOR_LIB_H
+
+#include "fall_detector_lib_global.h"
+
+#ifdef __cplusplus
 
 #include "interval_processor.h"
 
 namespace FallDetector
 {
-class VideoProcessor
+class FALL_DETECTOR_LIBSHARED_EXPORT VideoProcessor
 {
+
 public:
     VideoProcessor();
     ~VideoProcessor();
@@ -25,8 +30,9 @@ public:
     int GetHistory() { return mHistory; }
     float GetThreshold() { return mThreshold; }
 
-private:
     void ProcessFrame();
+
+private:
     double CalculateCoefficientOfMotion(cv::Mat &silhouette, cv::Mat &mhiMask);
 
     cv::VideoCapture mVideoCapture;
@@ -68,4 +74,13 @@ private:
 };
 }
 
-#endif // FALL_DETECTOR_VIDEO_PROCESSOR_H
+extern "C" {
+#endif
+
+extern void StartProcessing(int, void *ob);
+
+#ifdef __cplusplus
+}
+
+#endif
+#endif // FALL_DETECTOR_LIB_H

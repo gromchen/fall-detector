@@ -39,6 +39,7 @@
 #include "RaspiCamControl.h"
 #include "RaspiPreview.h"
 #include "RaspiCLI.h"
+#include "fall_detector_lib.h"
 
 #include <semaphore.h>
 
@@ -170,6 +171,10 @@ static void video_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffe
             cvMerge(py, pu_big, pv_big, NULL, image);
 
             cvCvtColor(image,dstImage,CV_YCrCb2RGB);	// convert in RGB color space (slow)
+
+            void* obj;
+            StartProcessing(0, obj);
+
             cvShowImage("camcvWin", dstImage );
         }
         else
