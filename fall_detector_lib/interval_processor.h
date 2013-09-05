@@ -18,13 +18,14 @@ public:
     void Include(FrameInfo frameInfo);
     void Reset();
 
-    HumanState GetHumanState() { return mFiniteStateMachine.GetHumanState(); }
+    HumanState GetHumanState() { return mFiniteStateMachine.GetCurrentHumanState(); }
 
 private:    
     DataCollector mDataCollector;
     boost::chrono::high_resolution_clock::time_point mTimeOfPreviousSecond;
     std::vector<FrameInfo> mFrameInfos;
     FiniteStateMachine mFiniteStateMachine;
+    unsigned int mFallingCount;
 };
 }
 

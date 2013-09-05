@@ -142,7 +142,7 @@ void Application::handleResolution()
             mVideoProcessor.SetResolution(320, 240);
             break;
         case '2':
-            mVideoProcessor.SetResolution(1024, 768);
+            mVideoProcessor.SetResolution(640, 480);
             break;
         case 'q':
             stop = true;

@@ -38,6 +38,7 @@
 #include "RaspiCamControl.h"
 #include "RaspiPreview.h"
 #include "RaspiCLI.h"
+#include "fall_detector_lib.h"
 
 #include <semaphore.h>
 
@@ -63,6 +64,7 @@ const int MAX_BITRATE = 30000000; // 30Mbits/s
 //new
 int nCount=0;
 IplImage *py, *pu, *pv, *pu_big, *pv_big, *image,* dstImage;
+void* gVideoProcessor;
 
 
 int mmal_status_to_int(MMAL_STATUS_T status);
@@ -114,13 +116,13 @@ static void default_status(RASPIVID_STATE *state)
    memset(state, 0, sizeof(RASPIVID_STATE));
 
    // Now set anything non-zero
-   state->timeout 			= 10000;     // 5s delay before take image
+   state->timeout 			= 60000;     // 60s delay before take image
    state->width 			= 640;      // use a multiple of 320 (640, 1280)
    state->height 			= 480;		// use a multiple of 240 (480, 960)
    state->bitrate 			= 17000000; // This is a decent default bitrate for 1080p
    state->framerate 		= VIDEO_FRAME_RATE_NUM;
    state->immutableInput 	= 1;
-   state->graymode 			= 1;		//gray by default, much faster than color (0)
+   state->graymode 			= 0;		//gray by default, much faster than color (0)
 
    // Setup preview window defaults
    raspipreview_set_defaults(&state->preview_parameters);
@@ -169,6 +171,9 @@ static void video_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffe
             cvMerge(py, pu_big, pv_big, NULL, image);
 
             cvCvtColor(image,dstImage,CV_YCrCb2RGB);	// convert in RGB color space (slow)
+
+            StartProcessing(dstImage, gVideoProcessor);
+
             cvShowImage("camcvWin", dstImage );
         }
         else
@@ -477,6 +482,8 @@ int main()
     pu_big = cvCreateImage(cvSize(w,h), IPL_DEPTH_8U, 1);
     pv_big = cvCreateImage(cvSize(w,h), IPL_DEPTH_8U, 1);
     image = cvCreateImage(cvSize(w,h), IPL_DEPTH_8U, 3);	// final picture to display
+
+    gVideoProcessor = 0;
 
 
     // create camera

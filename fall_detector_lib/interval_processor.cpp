@@ -11,6 +11,7 @@ namespace FallDetector
 {
 IntervalProcessor::IntervalProcessor()
 {
+    mFallingCount = 0;
 }
 
 void IntervalProcessor::StartTracking()
@@ -57,57 +58,72 @@ void IntervalProcessor::Include(FrameInfo frameInfo)
         {
             feature_collection.CalculateStandardDeviation();
 
-            // Determination of the fall
-            // TODO: coefficient of motion
-            if(feature_collection.GetOrientation().GetStandardDeviation() > 15
-               || feature_collection.GetRatio().GetStandardDeviation() > 0.9)
+            // Start of fall
+            if(feature_collection.GetOrientation().GetStandardDeviation() > 80
+                    || feature_collection.GetRatio().GetStandardDeviation() > 0.9)
             {
                 mFiniteStateMachine.MoveToState(FALLING);
+                mFallingCount = 0;
             }
             else
             {
-                // TODO: && not working
-                if(feature_collection.GetPositionX().GetStandardDeviation() <= 2
-                   || feature_collection.GetPositionY().GetStandardDeviation() <= 2
-                   || feature_collection.GetAxisA().GetStandardDeviation() <= 2
-                   || feature_collection.GetAxisB().GetStandardDeviation() <= 2)
+                // Small activity
+                if(feature_collection.GetOrientation().GetStandardDeviation() < 15
+                        && (feature_collection.GetPositionX().GetStandardDeviation() <= 2
+                            || feature_collection.GetPositionY().GetStandardDeviation() <= 2
+                            || feature_collection.GetAxisA().GetStandardDeviation() <= 2
+                            || feature_collection.GetAxisB().GetStandardDeviation() <= 2))
                 {
-                    if(mFiniteStateMachine.GetHumanState() == STANDING
-                       || mFiniteStateMachine.GetHumanState() == WALKING)
+                    mFallingCount = 0;
+
+                    if(mFiniteStateMachine.GetCurrentHumanState() == STANDING
+                            || mFiniteStateMachine.GetCurrentHumanState() == WALKING)
                     {
                         mFiniteStateMachine.MoveToState(STANDING);
                     }
                     else
                     {
-                        if(mFiniteStateMachine.GetHumanState() == FALLING
-                           || mFiniteStateMachine.GetHumanState() == LYING)
+                        if(mFiniteStateMachine.GetCurrentHumanState() == FALLING
+                                || mFiniteStateMachine.GetCurrentHumanState() == LYING)
                         {
                             mFiniteStateMachine.MoveToState(LYING);
                         }
                     }
                 }
+                // Enough activity for walking
                 else
                 {
-                    if(mFiniteStateMachine.GetHumanState() == STANDING
-                       || mFiniteStateMachine.GetHumanState() == WALKING)
+                    if(mFiniteStateMachine.GetCurrentHumanState() == STANDING
+                            || mFiniteStateMachine.GetCurrentHumanState() == WALKING)
                     {
                         mFiniteStateMachine.MoveToState(WALKING);
+                        mFallingCount = 0;
                     }
                     else
                     {
-                        if(mFiniteStateMachine.GetHumanState() == FALLING
-                           || mFiniteStateMachine.GetHumanState() == LYING)
+                        // Still falling
+                        if(mFiniteStateMachine.GetCurrentHumanState() == FALLING
+                                || mFiniteStateMachine.GetCurrentHumanState() == LYING)
                         {
-                            mFiniteStateMachine.MoveToState(FALLING);
+                            if(mFallingCount >= 3)
+                            {
+                                mFiniteStateMachine.MoveToState(WALKING);
+                                mFallingCount = 0;
+                            }
+                            else
+                            {
+                                mFiniteStateMachine.MoveToState(FALLING);
+                                mFallingCount++;
+                            }
                         }
                     }
                 }
-
             }
         }
         else
         {
             mFiniteStateMachine.MoveToState(NOT_DETECTED);
+            mFallingCount = 0;
         }
 
         // Data collection
@@ -118,7 +134,7 @@ void IntervalProcessor::Include(FrameInfo frameInfo)
         mDataCollector.Collect(IntervalInfo(boost::posix_time::microsec_clock::local_time(),
                                             fps,
                                             feature_collection,
-                                            mFiniteStateMachine.GetHumanState(),
+                                            mFiniteStateMachine.GetCurrentHumanState(),
                                             angles));
     }
 }
@@ -126,5 +142,6 @@ void IntervalProcessor::Include(FrameInfo frameInfo)
 void IntervalProcessor::Reset()
 {
     mFiniteStateMachine.Reset();
+    mFallingCount = 0;
 }
 }

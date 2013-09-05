@@ -30,7 +30,7 @@ public:
     int GetHistory() { return mHistory; }
     float GetThreshold() { return mThreshold; }
 
-    void ProcessFrame();
+    void ProcessFrame(cv::Mat &originalFrame);
 
 private:
     double CalculateCoefficientOfMotion(cv::Mat &silhouette, cv::Mat &mhiMask);
@@ -42,7 +42,7 @@ private:
     int mHistory;
     float mThreshold;
 
-    cv::Mat mOriginalFrame;
+//    cv::Mat mOriginalFrame;
     cv::Mat mForegroundMask;
     cv::Mat mThresholdMask;
     cv::Mat mErodeMask;
@@ -77,7 +77,7 @@ private:
 extern "C" {
 #endif
 
-extern void StartProcessing(int, void *ob);
+extern void StartProcessing(IplImage *image, void *ob);
 
 #ifdef __cplusplus
 }

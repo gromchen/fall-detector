@@ -55,7 +55,16 @@ void VideoProcessor::RunWithoutGui()
 
         while (true)
         {
-            ProcessFrame();
+            this_thread::interruption_point();
+
+            Mat original_frame;
+
+            if (!mVideoCapture.read(original_frame))
+            {
+                throw runtime_error("Could not read new frame");
+            }
+
+            ProcessFrame(original_frame);
         }
     }
     catch(thread_interrupted&)
@@ -111,11 +120,20 @@ void VideoProcessor::RunWithGui()
 
         while (true)
         {
-            ProcessFrame();
+            this_thread::interruption_point();
+
+            Mat original_frame;
+
+            if (!mVideoCapture.read(original_frame))
+            {
+                throw runtime_error("Could not read new frame");
+            }
+
+            ProcessFrame(original_frame);
 
             if(mObjectFound)
             {
-                ellipse(mOriginalFrame, mRotatedRectangle, Scalar(0, 255, 0), 2);
+                ellipse(original_frame, mRotatedRectangle, Scalar(0, 255, 0), 2);
             }
 
             Scalar colour = Scalar(255, 0, 0);
@@ -125,10 +143,10 @@ void VideoProcessor::RunWithGui()
                 colour = Scalar(0, 0, 255);
             }
 
-            putText(mOriginalFrame, "Human is " + HumanStateToString(mIntervalProcessor.GetHumanState()),
+            putText(original_frame, "Human is " + HumanStateToString(mIntervalProcessor.GetHumanState()),
                     Point(0, 20), 1, 1, colour, 2);
 
-            imshow(name_original_frame, mOriginalFrame);
+            imshow(name_original_frame, original_frame);
 
             if(mShowAdditionalGui)
             {
@@ -174,16 +192,9 @@ void VideoProcessor::CreateNewBackgroundSubtractor(int history,
     mpBackgroundSubtractor = new BackgroundSubtractorMOG2(mHistory, mThreshold);
 }
 
-void VideoProcessor::ProcessFrame()
+void VideoProcessor::ProcessFrame(Mat &originalFrame)
 {
-    this_thread::interruption_point();
-
-    if (!mVideoCapture.read(mOriginalFrame))
-    {
-        throw runtime_error("Could not read new frame");
-    }
-
-    (*mpBackgroundSubtractor)(mOriginalFrame, mForegroundMask);
+    (*mpBackgroundSubtractor)(originalFrame, mForegroundMask);
 
     vector<vector<Point> > contours;
     vector<Vec4i> hierarchy;
@@ -219,7 +230,7 @@ void VideoProcessor::ProcessFrame()
         findContours(mForegroundMask, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
     }
 
-    drawContours(mOriginalFrame, contours, -1, Scalar(0, 0, 255), 2);
+    drawContours(originalFrame, contours, -1, Scalar(0, 0, 255), 2);
 
     // Object detection
     mObjectFound = false;
@@ -298,14 +309,18 @@ double VideoProcessor::CalculateCoefficientOfMotion(Mat &silhouette, Mat &mhiMas
 }
 }
 
-void StartProcessing(int, void *ob)
+void StartProcessing(IplImage *image, void *ob)
 {
     FallDetector::VideoProcessor *p_video_processor = static_cast<FallDetector::VideoProcessor *>(ob);
 
-    if(p_video_processor == NULL)
+    if(p_video_processor == 0)
     {
         p_video_processor = new FallDetector::VideoProcessor();
     }
 
-    p_video_processor->ProcessFrame();
+    Mat original_frame(image);
+
+    p_video_processor->ProcessFrame(original_frame);
+
+    *image = original_frame;
 }

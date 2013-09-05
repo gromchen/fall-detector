@@ -11,7 +11,7 @@ public:
     FiniteStateMachine();
 
     void MoveToState(HumanState humanState);
-    HumanState GetHumanState() { return mHumanState; }
+    HumanState GetCurrentHumanState() { return mHumanState; }
     void Reset();
 
 private:
