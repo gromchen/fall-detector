@@ -54,7 +54,7 @@ void IntervalProcessor::Include(FrameInfo frameInfo)
             }
         }
 
-        if(feature_collection.GetNumberOfSummands() > 1) // Greater than 1, because otherwise standard deviation is 0
+        if(feature_collection.GetNumberOfSummands() > 0) // Greater than 1, because otherwise standard deviation is 0
         {
             feature_collection.CalculateStandardDeviation();
 
